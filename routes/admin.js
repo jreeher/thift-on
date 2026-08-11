@@ -3,6 +3,7 @@ const pool = require('../db/pool');
 const { requireStaffAuth } = require('../middleware/auth');
 const { transitionItem } = require('../db/transitions');
 const { ALLOWED_CATEGORIES, clampSuggestedPrice, basePriceForCategory } = require('../lib/pricing');
+const { isConsolidationCandidate } = require('../lib/bins');
 
 const router = express.Router();
 
@@ -90,7 +91,16 @@ router.get(
        GROUP BY b.id
        ORDER BY b.bin_number ASC
     `);
-    res.render('admin/bins', { bins, error: null });
+
+    // Consolidation is only ever a suggestion computed here from live occupancy — nothing
+    // physical moves and no status changes until a human taps "Flag for Consolidation"
+    // below (Section 2).
+    const binsWithSuggestions = bins.map((bin) => ({
+      ...bin,
+      consolidationSuggested: isConsolidationCandidate(bin)
+    }));
+
+    res.render('admin/bins', { bins: binsWithSuggestions, error: null });
   })
 );
 
@@ -119,6 +129,34 @@ router.post(
     // Retiring/consolidating a bin is a human decision made by tapping a button here —
     // software never moves a physical item or infers bin state changes (Section 2).
     await pool.query(`UPDATE bins SET status = 'retired' WHERE id = $1`, [req.params.id]);
+    res.redirect('/admin/bins');
+  })
+);
+
+router.post(
+  '/bins/:id/flag-consolidation',
+  asyncHandler(async (req, res) => {
+    // Acknowledging a consolidation suggestion is itself the human confirmation — the
+    // suggestion alone never changes bin status (Section 2).
+    await pool.query(`UPDATE bins SET status = 'needs_consolidation' WHERE id = $1 AND status = 'active'`, [
+      req.params.id
+    ]);
+    res.redirect('/admin/bins');
+  })
+);
+
+router.post(
+  '/bins/:id/resolve-consolidation',
+  asyncHandler(async (req, res) => {
+    // Tapped once staff have physically moved the bin's items elsewhere — the bin itself
+    // is now empty and available for reuse. This does not move any item; reassigning an
+    // item's bin_number remains a separate, explicit edit.
+    await pool.query(
+      `UPDATE bins
+          SET status = 'active', last_consolidated_at = NOW()
+        WHERE id = $1 AND status = 'needs_consolidation'`,
+      [req.params.id]
+    );
     res.redirect('/admin/bins');
   })
 );

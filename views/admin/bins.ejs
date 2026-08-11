@@ -18,6 +18,14 @@
       <p class="error"><%= error %></p>
     <% } %>
 
+    <% const suggestedCount = bins.filter((b) => b.consolidationSuggested).length; %>
+    <% if (suggestedCount > 0) { %>
+      <p class="consolidation-banner">
+        <%= suggestedCount %> bin<%= suggestedCount === 1 ? '' : 's' %> below 25% capacity
+        &mdash; consider consolidating into fewer bins.
+      </p>
+    <% } %>
+
     <table class="bins-table">
       <thead>
         <tr>
@@ -32,10 +40,25 @@
         <% bins.forEach((bin) => { %>
           <tr>
             <td><%= bin.bin_number %></td>
-            <td><%= bin.status %></td>
+            <td>
+              <%= bin.status %>
+              <% if (bin.consolidationSuggested) { %>
+                <span class="suggestion-badge">low occupancy</span>
+              <% } %>
+            </td>
             <td><%= bin.occupied_count %></td>
             <td><%= bin.capacity %></td>
-            <td>
+            <td class="bin-actions">
+              <% if (bin.status === 'active' && bin.consolidationSuggested) { %>
+                <form method="POST" action="/admin/bins/<%= bin.id %>/flag-consolidation">
+                  <button type="submit">Flag for Consolidation</button>
+                </form>
+              <% } %>
+              <% if (bin.status === 'needs_consolidation') { %>
+                <form method="POST" action="/admin/bins/<%= bin.id %>/resolve-consolidation">
+                  <button type="submit">Mark Consolidated</button>
+                </form>
+              <% } %>
               <% if (bin.status !== 'retired') { %>
                 <form method="POST" action="/admin/bins/<%= bin.id %>/retire">
                   <button type="submit">Retire</button>
