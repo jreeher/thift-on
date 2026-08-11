@@ -4,11 +4,14 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const cron = require('node-cron');
 
-const { requireStaffAuth } = require('./middleware/auth');
 const adminRouter = require('./routes/admin');
 const apiRouter = require('./routes/api');
 const storefrontRouter = require('./routes/storefront');
+const webhooksRouter = require('./routes/webhooks');
+const staffRouter = require('./routes/staff');
 const { releaseExpiredCarts } = require('./jobs/release-carts');
+const { recalculatePrices } = require('./jobs/markdown');
+const { purgePhotos } = require('./jobs/purge-photos');
 
 const app = express();
 
@@ -18,9 +21,10 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(cookieParser(process.env.SESSION_SECRET));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Body parsers are mounted per-route below, not globally: the Stripe webhook
-// route needs the raw body for signature verification and must never pass
-// through express.json() first.
+// Mounted first and before any express.json()/urlencoded() parser: the Stripe webhook
+// route needs the exact raw request body to verify its signature, and its own router
+// applies express.raw() only to itself (Section 9).
+app.use('/webhooks', webhooksRouter);
 
 function asyncHandler(fn) {
   return function (req, res, next) {
@@ -68,12 +72,7 @@ app.post('/logout', (req, res) => {
 
 app.use('/admin', adminRouter);
 app.use('/api', apiRouter);
-
-// Placeholder landing route so the /staff gate is visibly wired up before Phase 6
-// adds the real fulfillment page.
-app.get('/staff/fulfillment', requireStaffAuth, (req, res) => {
-  res.send('Staff fulfillment queue — coming in Phase 6.');
-});
+app.use('/staff', staffRouter);
 
 app.use('/', storefrontRouter);
 
@@ -90,6 +89,16 @@ app.use((err, req, res, next) => {
 // Releases abandoned cart reservations back to 'active' every 5 minutes (Section 9/10).
 cron.schedule('*/5 * * * *', () => {
   releaseExpiredCarts().catch((err) => console.error('release-carts job failed:', err));
+});
+
+// Recomputes markdown prices and expires items past week 5, daily at 03:00 (Section 10).
+cron.schedule('0 3 * * *', () => {
+  recalculatePrices().catch((err) => console.error('markdown job failed:', err));
+});
+
+// Purges photos for items past their 7-day retention in a terminal state, daily at 03:30.
+cron.schedule('30 3 * * *', () => {
+  purgePhotos().catch((err) => console.error('purge-photos job failed:', err));
 });
 
 const PORT = process.env.PORT || 3000;

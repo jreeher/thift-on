@@ -1,3 +1,13 @@
+// Thrown only for the expected "someone else already changed this" race — distinct from
+// a plain Error (bad transition, DB down) so callers can safely map just this case to a
+// 409 without accidentally masking real infrastructure failures as business conflicts.
+class TransitionConflictError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'TransitionConflictError';
+  }
+}
+
 const VALID_TRANSITIONS = [
   ['draft', 'active'],
   ['active', 'reserved'],
@@ -47,12 +57,12 @@ async function transitionItem(client, itemId, fromStatus, toStatus, extraFields 
   );
 
   if (rows.length === 0) {
-    throw new Error(
-      `transitionItem failed: item ${itemId} was not in status '${fromStatus}' (already transitioned, or does not exist)`
+    throw new TransitionConflictError(
+      `item ${itemId} was not in status '${fromStatus}' (already transitioned, or does not exist)`
     );
   }
 
   return rows[0];
 }
 
-module.exports = { transitionItem, isValidTransition };
+module.exports = { transitionItem, isValidTransition, TransitionConflictError };

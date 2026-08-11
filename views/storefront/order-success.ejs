@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order <%= order.order_number %></title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/storefront-header') %>
+
+  <main class="item-page">
+    <h1>Thanks!</h1>
+    <p>Order <strong><%= order.order_number %></strong></p>
+
+    <% if (order.status === 'paid' || order.status === 'ready_for_pickup' || order.status === 'completed') { %>
+      <p>Your payment is confirmed. We'll have your order ready for pickup soon.</p>
+    <% } else { %>
+      <p>We're confirming your payment now &mdash; this usually only takes a few seconds. Feel free to refresh this page.</p>
+    <% } %>
+
+    <% if (items.length > 0) { %>
+      <ul>
+        <% items.forEach((item) => { %>
+          <li><%= item.title %> &mdash; $<%= (item.price_current_cents / 100).toFixed(2) %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+
+    <a href="/">&larr; Back to browse</a>
+  </main>
+</body>
+</html>

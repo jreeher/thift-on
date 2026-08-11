@@ -41,8 +41,19 @@
 
       <div class="cart-summary">
         <span class="cart-subtotal">Subtotal: $<%= (subtotalCents / 100).toFixed(2) %></span>
-        <button class="checkout-btn" disabled title="Checkout coming soon">Checkout</button>
       </div>
+
+      <% if (error) { %>
+        <p class="error"><%= error %></p>
+      <% } %>
+
+      <form method="POST" action="/checkout" class="checkout-form">
+        <label>
+          Email (for your receipt and pickup confirmation)
+          <input type="email" name="email" required placeholder="you@example.com">
+        </label>
+        <button type="submit" class="checkout-btn">Checkout</button>
+      </form>
     <% } %>
   </main>
 

@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node server.js",
     "migrate": "node db/migrate.js",
-    "test:cart-concurrency": "node test/cart-concurrency.test.js"
+    "test:cart-concurrency": "node test/cart-concurrency.test.js",
+    "test:markdown": "node test/markdown-idempotency.test.js",
+    "test:purge-photos": "node test/purge-photos-idempotency.test.js",
+    "test": "npm run test:markdown && npm run test:purge-photos"
   },
   "license": "UNLICENSED",
   "dependencies": {

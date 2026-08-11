@@ -2,11 +2,21 @@ const express = require('express');
 const pool = require('../db/pool');
 const { ALLOWED_CATEGORIES, nextMarkdown } = require('../lib/pricing');
 const { ensureCartToken } = require('../middleware/cart');
+const { createCheckoutSession } = require('../lib/stripe');
 
 const router = express.Router();
 
 function asyncHandler(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+}
+
+async function loadCartItems(cartToken) {
+  const { rows: items } = await pool.query(
+    `SELECT * FROM items WHERE reserved_by_cart = $1 AND status = 'reserved' ORDER BY created_at ASC`,
+    [cartToken]
+  );
+  const subtotalCents = items.reduce((sum, item) => sum + (item.price_current_cents || 0), 0);
+  return { items, subtotalCents };
 }
 
 router.use(ensureCartToken);
@@ -58,14 +68,8 @@ router.get(
 router.get(
   '/cart',
   asyncHandler(async (req, res) => {
-    const { rows: items } = await pool.query(
-      `SELECT * FROM items WHERE reserved_by_cart = $1 AND status = 'reserved' ORDER BY created_at ASC`,
-      [req.cartToken]
-    );
-
-    const subtotalCents = items.reduce((sum, item) => sum + (item.price_current_cents || 0), 0);
-
-    res.render('storefront/cart', { items, subtotalCents });
+    const { items, subtotalCents } = await loadCartItems(req.cartToken);
+    res.render('storefront/cart', { items, subtotalCents, error: null });
   })
 );
 
@@ -132,5 +136,74 @@ router.post(
     res.redirect('/cart');
   })
 );
+
+router.post(
+  '/checkout',
+  asyncHandler(async (req, res) => {
+    const email = (req.body.email || '').trim();
+
+    if (!email || !email.includes('@')) {
+      const { items, subtotalCents } = await loadCartItems(req.cartToken);
+      return res.render('storefront/cart', { items, subtotalCents, error: 'Enter a valid email to check out.' });
+    }
+
+    const { items, subtotalCents } = await loadCartItems(req.cartToken);
+    if (items.length === 0) {
+      return res.redirect('/cart');
+    }
+
+    // A slow checkout (entering card details, etc.) shouldn't lose the reservation out
+    // from under the customer — refresh the clock right as they start (Section 9).
+    await pool.query(
+      `UPDATE items
+          SET reserved_until = NOW() + INTERVAL '30 minutes', updated_at = NOW()
+        WHERE reserved_by_cart = $1 AND status = 'reserved'`,
+      [req.cartToken]
+    );
+
+    const { rows: idRows } = await pool.query(`SELECT nextval('orders_id_seq') AS id`);
+    const orderId = Number(idRows[0].id);
+    const orderNumber = `TS-${orderId}`;
+
+    // Stripe session is created before the order row exists, per Section 9 — its id is
+    // embedded in the session metadata so the webhook (the source of truth for payment,
+    // never this browser redirect) can find the order later.
+    const session = await createCheckoutSession({ orderId, items, customerEmail: email });
+
+    await pool.query(
+      `INSERT INTO orders (id, order_number, customer_email, subtotal_cents, stripe_session_id, status)
+       VALUES ($1, $2, $3, $4, $5, 'pending')`,
+      [orderId, orderNumber, email, subtotalCents, session.id]
+    );
+
+    res.redirect(303, session.url);
+  })
+);
+
+router.get(
+  '/order/success',
+  asyncHandler(async (req, res) => {
+    const orderId = Number(req.query.order);
+    if (!Number.isInteger(orderId)) {
+      return res.redirect('/');
+    }
+
+    const { rows: orderRows } = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
+    if (orderRows.length === 0) {
+      return res.redirect('/');
+    }
+
+    // The webhook (not this redirect) is what actually confirms payment, so it may not
+    // have landed yet — items/order status here can still legitimately read as pending
+    // (Section 2). The view is written to be honest about that.
+    const { rows: items } = await pool.query('SELECT * FROM items WHERE order_id = $1', [orderId]);
+
+    res.render('storefront/order-success', { order: orderRows[0], items });
+  })
+);
+
+router.get('/order/cancelled', (req, res) => {
+  res.render('storefront/order-cancelled');
+});
 
 module.exports = router;
