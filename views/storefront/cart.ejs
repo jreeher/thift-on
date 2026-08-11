@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/storefront-header') %>
+
+  <main class="cart-page">
+    <h1>Your Cart</h1>
+
+    <% if (items.length === 0) { %>
+      <p class="empty-state">Your cart is empty. <a href="/">Browse items</a>.</p>
+    <% } else { %>
+      <% items.forEach((item) => { %>
+        <div class="cart-item">
+          <div class="cart-item-photo">
+            <% if (item.photo_url) { %>
+              <img src="<%= item.photo_url %>" alt="<%= item.title %>">
+            <% } else { %>
+              <div class="no-photo">No photo</div>
+            <% } %>
+          </div>
+          <div class="cart-item-info">
+            <p class="cart-item-title"><%= item.title %></p>
+            <p class="cart-item-price">$<%= (item.price_current_cents / 100).toFixed(2) %></p>
+            <p class="cart-item-countdown" data-reserved-until="<%= item.reserved_until.toISOString() %>">
+              Reserved &mdash; expires in <span class="countdown-value">--:--</span>
+            </p>
+          </div>
+          <div class="cart-item-remove">
+            <form method="POST" action="/cart/remove/<%= item.id %>">
+              <button type="submit">Remove</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+
+      <div class="cart-summary">
+        <span class="cart-subtotal">Subtotal: $<%= (subtotalCents / 100).toFixed(2) %></span>
+        <button class="checkout-btn" disabled title="Checkout coming soon">Checkout</button>
+      </div>
+    <% } %>
+  </main>
+
+  <script>
+    function formatRemaining(ms) {
+      if (ms <= 0) return 'expired';
+      const totalSeconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return minutes + ':' + String(seconds).padStart(2, '0');
+    }
+
+    function tick() {
+      document.querySelectorAll('.cart-item-countdown').forEach((el) => {
+        const reservedUntil = new Date(el.dataset.reservedUntil).getTime();
+        const remaining = reservedUntil - Date.now();
+        const valueEl = el.querySelector('.countdown-value');
+        valueEl.textContent = formatRemaining(remaining);
+      });
+    }
+
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>

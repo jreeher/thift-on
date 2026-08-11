@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= item.title %></title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/storefront-header') %>
+
+  <main class="item-page">
+    <a class="back-link" href="/">&larr; Back to browse</a>
+
+    <div class="item-detail">
+      <div class="item-detail-photo">
+        <% if (item.photo_url) { %>
+          <img src="<%= item.photo_url %>" alt="<%= item.title %>">
+        <% } else { %>
+          <div class="no-photo">No photo</div>
+        <% } %>
+      </div>
+
+      <div class="item-detail-info">
+        <h1><%= item.title %></h1>
+        <p class="item-category"><%= (item.category || '').replace('_', ' ') %></p>
+        <p class="item-price">$<%= (item.price_current_cents / 100).toFixed(2) %></p>
+
+        <% if (markdown) { %>
+          <p class="markdown-note">
+            Price drops to $<%= (markdown.nextPriceCents / 100).toFixed(2) %>
+            on <%= markdown.nextDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) %>
+            &mdash; buy now to lock in today's price.
+          </p>
+        <% } %>
+
+        <p class="item-description"><%= item.description %></p>
+
+        <% if (item.condition_notes) { %>
+          <h3>Condition</h3>
+          <p class="item-condition"><%= item.condition_notes %></p>
+        <% } %>
+
+        <form method="POST" action="/cart/add/<%= item.id %>">
+          <button type="submit" class="add-to-cart-btn">Add to Cart</button>
+        </form>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bins</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="admin-page">
+    <nav class="admin-nav">
+      <a href="/admin/review">Review Queue</a>
+      <a href="/admin/bins">Bins</a>
+    </nav>
+    <h1>Bins</h1>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <table class="bins-table">
+      <thead>
+        <tr>
+          <th>Bin #</th>
+          <th>Status</th>
+          <th>Occupied</th>
+          <th>Capacity</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% bins.forEach((bin) => { %>
+          <tr>
+            <td><%= bin.bin_number %></td>
+            <td><%= bin.status %></td>
+            <td><%= bin.occupied_count %></td>
+            <td><%= bin.capacity %></td>
+            <td>
+              <% if (bin.status !== 'retired') { %>
+                <form method="POST" action="/admin/bins/<%= bin.id %>/retire">
+                  <button type="submit">Retire</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+
+    <h2>Create bin</h2>
+    <form method="POST" action="/admin/bins" class="bin-create-form">
+      <label>
+        Bin number
+        <input type="number" name="bin_number" min="1" required>
+      </label>
+      <label>
+        Capacity
+        <input type="number" name="capacity" min="1" value="20">
+      </label>
+      <button type="submit">Create</button>
+    </form>
+  </main>
+</body>
+</html>

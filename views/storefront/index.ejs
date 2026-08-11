@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thrift Store</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/storefront-header') %>
+
+  <main class="storefront-page">
+    <nav class="category-filter">
+      <a href="/" class="<%= !selectedCategory ? 'active' : '' %>">All</a>
+      <% categories.forEach((c) => { %>
+        <a href="/?category=<%= c %>" class="<%= selectedCategory === c ? 'active' : '' %>">
+          <%= c.replace('_', ' ') %>
+        </a>
+      <% }) %>
+    </nav>
+
+    <% if (items.length === 0) { %>
+      <p class="empty-state">No items available right now.</p>
+    <% } %>
+
+    <div class="item-grid">
+      <% items.forEach((item) => { %>
+        <a class="item-card" href="/item/<%= item.id %>">
+          <div class="item-card-photo">
+            <% if (item.photo_url) { %>
+              <img src="<%= item.photo_url %>" alt="<%= item.title %>">
+            <% } else { %>
+              <div class="no-photo">No photo</div>
+            <% } %>
+          </div>
+          <h2 class="item-card-title"><%= item.title %></h2>
+          <p class="item-card-price">$<%= (item.price_current_cents / 100).toFixed(2) %></p>
+        </a>
+      <% }) %>
+    </div>
+  </main>
+</body>
+</html>
