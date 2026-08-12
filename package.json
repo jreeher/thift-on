@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "migrate": "node db/migrate.js",
+    "check-env": "node scripts/check-env.js",
     "test:cart-concurrency": "node test/cart-concurrency.test.js",
     "test:markdown": "node test/markdown-idempotency.test.js",
     "test:purge-photos": "node test/purge-photos-idempotency.test.js",
