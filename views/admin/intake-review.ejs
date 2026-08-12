@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Review Draft</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="admin-page">
+    <nav class="admin-nav">
+      <a href="/admin/intake">Intake</a>
+      <a href="/admin/review">Review Queue</a>
+      <a href="/admin/bins">Bins</a>
+    </nav>
+    <h1>Review Draft</h1>
+
+    <%- include('../partials/item-review-card', { item, categories }) %>
+
+    <p><a href="/admin/intake">Next Photo &rarr;</a></p>
+  </main>
+</body>
+</html>

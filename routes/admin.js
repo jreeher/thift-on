@@ -198,6 +198,17 @@ router.post(
 );
 
 router.get(
+  '/intake/:id',
+  asyncHandler(async (req, res) => {
+    const { rows } = await pool.query(`SELECT * FROM items WHERE id = $1 AND status = 'draft'`, [req.params.id]);
+    if (rows.length === 0) {
+      return res.redirect('/admin/intake');
+    }
+    res.render('admin/intake-review', { item: rows[0], categories: ALLOWED_CATEGORIES });
+  })
+);
+
+router.get(
   '/bins',
   asyncHandler(async (req, res) => {
     const { rows: bins } = await pool.query(`
