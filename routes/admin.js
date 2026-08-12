@@ -154,8 +154,11 @@ router.post(
       return res.render('admin/intake-upload', { binNumber, error: 'A photo is required.' });
     }
 
-    // Re-check the bin still exists in case it was retired mid-session — bin state is a
-    // human decision (Section 2) and can change while a bin is open for intake.
+    // Re-check the bin row still exists (bins are never deleted today, only retired via
+    // status, so this is a defensive guard rather than one that currently fires in
+    // practice). Matches the same existence-only check routes/api.js's POST /items uses —
+    // a retired bin can still receive new drafts; status changes are a human decision
+    // (Section 2), not something this route second-guesses.
     const { rows: binRows } = await pool.query('SELECT bin_number FROM bins WHERE bin_number = $1', [binNumber]);
     if (binRows.length === 0) {
       res.clearCookie(INTAKE_BIN_COOKIE);
