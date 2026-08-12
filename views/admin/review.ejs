@@ -9,6 +9,7 @@
 <body>
   <main class="admin-page">
     <nav class="admin-nav">
+      <a href="/admin/intake">Intake</a>
       <a href="/admin/review">Review Queue</a>
       <a href="/admin/bins">Bins</a>
     </nav>
@@ -19,47 +20,7 @@
     <% } %>
 
     <% items.forEach((item) => { %>
-      <section class="review-card">
-        <div class="review-card-photo">
-          <% if (item.photo_url) { %>
-            <img src="<%= item.photo_url %>" alt="Item photo">
-          <% } else { %>
-            <div class="no-photo">No photo</div>
-          <% } %>
-          <p class="ai-confidence">AI confidence: <%= item.ai_confidence || 'n/a' %></p>
-        </div>
-        <form class="review-card-form" method="POST" action="/admin/review/<%= item.id %>/approve">
-          <label>
-            Title
-            <input type="text" name="title" maxlength="60" value="<%= item.title || '' %>">
-          </label>
-          <label>
-            Category
-            <select name="category">
-              <% categories.forEach((c) => { %>
-                <option value="<%= c %>" <%= item.category === c ? 'selected' : '' %>><%= c %></option>
-              <% }) %>
-            </select>
-          </label>
-          <label>
-            Description
-            <textarea name="description" rows="3"><%= item.description || '' %></textarea>
-          </label>
-          <label>
-            Condition notes
-            <textarea name="condition_notes" rows="2"><%= item.condition_notes || '' %></textarea>
-          </label>
-          <label>
-            Price (cents)
-            <input type="number" name="price_cents" min="1" value="<%= item.price_original_cents || '' %>">
-          </label>
-          <label>
-            Bin number
-            <input type="number" name="bin_number" min="1" value="<%= item.bin_number || '' %>">
-          </label>
-          <button type="submit">Approve &amp; Publish</button>
-        </form>
-      </section>
+      <%- include('../partials/item-review-card', { item, categories }) %>
     <% }) %>
   </main>
 </body>
