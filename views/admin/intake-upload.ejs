@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intake — Bin <%= binNumber %></title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="admin-page">
+    <nav class="admin-nav">
+      <a href="/admin/intake">Intake</a>
+      <a href="/admin/review">Review Queue</a>
+      <a href="/admin/bins">Bins</a>
+    </nav>
+    <h1>Working in Bin #<%= binNumber %></h1>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <form method="POST" action="/admin/intake" enctype="multipart/form-data" class="bin-create-form">
+      <label>
+        Photo
+        <input type="file" name="photo" accept="image/*" capture="environment" required>
+      </label>
+      <button type="submit">Upload &amp; Draft</button>
+    </form>
+
+    <form method="POST" action="/admin/intake/close">
+      <button type="submit">Close Bin</button>
+    </form>
+  </main>
+</body>
+</html>

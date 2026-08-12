@@ -1,11 +1,15 @@
 const express = require('express');
+const multer = require('multer');
 const pool = require('../db/pool');
 const { requireStaffAuth } = require('../middleware/auth');
 const { transitionItem } = require('../db/transitions');
 const { ALLOWED_CATEGORIES, clampSuggestedPrice, basePriceForCategory } = require('../lib/pricing');
 const { isConsolidationCandidate } = require('../lib/bins');
+const { uploadPhoto } = require('../lib/storage');
+const { analyzeItemPhoto } = require('../lib/ai');
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
 
 function asyncHandler(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -135,6 +139,60 @@ router.post('/intake/close', (req, res) => {
   res.clearCookie(INTAKE_BIN_COOKIE);
   res.redirect('/admin/intake');
 });
+
+router.post(
+  '/intake',
+  upload.single('photo'),
+  asyncHandler(async (req, res) => {
+    const openBin = req.signedCookies[INTAKE_BIN_COOKIE];
+    if (!openBin) {
+      return res.redirect('/admin/intake');
+    }
+    const binNumber = Number(openBin);
+
+    if (!req.file) {
+      return res.render('admin/intake-upload', { binNumber, error: 'A photo is required.' });
+    }
+
+    // Re-check the bin still exists in case it was retired mid-session — bin state is a
+    // human decision (Section 2) and can change while a bin is open for intake.
+    const { rows: binRows } = await pool.query('SELECT bin_number FROM bins WHERE bin_number = $1', [binNumber]);
+    if (binRows.length === 0) {
+      res.clearCookie(INTAKE_BIN_COOKIE);
+      return res.render('admin/intake-open', {
+        lastBin: String(binNumber),
+        error: `Bin ${binNumber} no longer exists. Choose a different bin.`
+      });
+    }
+
+    const { key, url } = await uploadPhoto(req.file.buffer, req.file.mimetype);
+
+    // AI output is a draft, never published automatically (Section 2).
+    const { fields, raw } = await analyzeItemPhoto(req.file.buffer, req.file.mimetype);
+
+    const { rows } = await pool.query(
+      `INSERT INTO items (
+         bin_number, photo_key, photo_url, title, category, description, condition_notes,
+         ai_raw_response, ai_confidence, price_original_cents, price_current_cents, status
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, 'draft')
+       RETURNING id`,
+      [
+        binNumber,
+        key,
+        url,
+        fields.title,
+        fields.category,
+        fields.description,
+        fields.conditionNotes,
+        raw ? JSON.stringify(raw) : null,
+        fields.confidence,
+        fields.priceCents
+      ]
+    );
+
+    res.redirect(`/admin/intake/${rows[0].id}`);
+  })
+);
 
 router.get(
   '/bins',
