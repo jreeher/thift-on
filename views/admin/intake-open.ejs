@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intake — Open a Bin</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="admin-page">
+    <nav class="admin-nav">
+      <a href="/admin/intake">Intake</a>
+      <a href="/admin/review">Review Queue</a>
+      <a href="/admin/bins">Bins</a>
+    </nav>
+    <h1>Intake</h1>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <form method="POST" action="/admin/intake/open" class="bin-create-form">
+      <label>
+        Bin number
+        <input type="number" name="bin_number" min="1" value="<%= lastBin %>" required autofocus>
+      </label>
+      <button type="submit">Open Bin</button>
+    </form>
+  </main>
+</body>
+</html>

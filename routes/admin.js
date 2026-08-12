@@ -11,6 +11,19 @@ function asyncHandler(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 }
 
+const INTAKE_BIN_COOKIE = 'intake_bin';
+const LAST_INTAKE_BIN_COOKIE = 'last_intake_bin';
+
+function intakeCookieOptions(maxAgeMs) {
+  return {
+    signed: true,
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: maxAgeMs
+  };
+}
+
 router.use(requireStaffAuth);
 router.use(express.urlencoded({ extended: false }));
 
@@ -78,6 +91,50 @@ router.post(
     }
   })
 );
+
+router.get(
+  '/intake',
+  asyncHandler(async (req, res) => {
+    const openBin = req.signedCookies[INTAKE_BIN_COOKIE];
+    if (!openBin) {
+      return res.render('admin/intake-open', {
+        lastBin: req.signedCookies[LAST_INTAKE_BIN_COOKIE] || '',
+        error: null
+      });
+    }
+    res.render('admin/intake-upload', { binNumber: openBin, error: null });
+  })
+);
+
+router.post(
+  '/intake/open',
+  asyncHandler(async (req, res) => {
+    const binNumber = req.body.bin_number ? Number(req.body.bin_number) : NaN;
+    if (!Number.isInteger(binNumber)) {
+      return res.render('admin/intake-open', {
+        lastBin: req.body.bin_number || '',
+        error: 'Bin number must be an integer.'
+      });
+    }
+
+    const { rows } = await pool.query('SELECT bin_number FROM bins WHERE bin_number = $1', [binNumber]);
+    if (rows.length === 0) {
+      return res.render('admin/intake-open', {
+        lastBin: String(binNumber),
+        error: `Bin ${binNumber} does not exist. Create it on the Bins page first.`
+      });
+    }
+
+    res.cookie(INTAKE_BIN_COOKIE, String(binNumber), intakeCookieOptions(12 * 60 * 60 * 1000));
+    res.cookie(LAST_INTAKE_BIN_COOKIE, String(binNumber), intakeCookieOptions(30 * 24 * 60 * 60 * 1000));
+    res.redirect('/admin/intake');
+  })
+);
+
+router.post('/intake/close', (req, res) => {
+  res.clearCookie(INTAKE_BIN_COOKIE);
+  res.redirect('/admin/intake');
+});
 
 router.get(
   '/bins',
