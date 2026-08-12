@@ -121,13 +121,9 @@ router.post(
       });
     }
 
-    const { rows } = await pool.query('SELECT bin_number FROM bins WHERE bin_number = $1', [binNumber]);
-    if (rows.length === 0) {
-      return res.render('admin/intake-open', {
-        lastBin: String(binNumber),
-        error: `Bin ${binNumber} does not exist. Create it on the Bins page first.`
-      });
-    }
+    // Bins are no longer pre-created on a separate page — any bin number works, and
+    // opening it here creates the row on first use (no-op if it already exists).
+    await pool.query('INSERT INTO bins (bin_number) VALUES ($1) ON CONFLICT (bin_number) DO NOTHING', [binNumber]);
 
     res.cookie(INTAKE_BIN_COOKIE, String(binNumber), intakeCookieOptions(12 * 60 * 60 * 1000));
     res.cookie(LAST_INTAKE_BIN_COOKIE, String(binNumber), intakeCookieOptions(30 * 24 * 60 * 60 * 1000));
@@ -135,10 +131,31 @@ router.post(
   })
 );
 
-router.post('/intake/close', (req, res) => {
-  res.clearCookie(INTAKE_BIN_COOKIE);
-  res.redirect('/admin/intake');
-});
+router.post(
+  '/intake/close',
+  asyncHandler(async (req, res) => {
+    const openBin = req.signedCookies[INTAKE_BIN_COOKIE];
+    if (openBin) {
+      const binNumber = Number(openBin);
+      // Snapshot how full this bin got during the session that's ending, so the
+      // consolidation suggestion (lib/bins.js) has a self-computed baseline instead of a
+      // manually-typed capacity. Only ever ratchets up (GREATEST), never down.
+      const { rows } = await pool.query(
+        `SELECT COUNT(*)::int AS occupied_count
+           FROM items
+          WHERE bin_number = $1 AND status NOT IN ('picked_up', 'expired', 'removed')`,
+        [binNumber]
+      );
+      await pool.query('UPDATE bins SET peak_item_count = GREATEST(peak_item_count, $1) WHERE bin_number = $2', [
+        rows[0].occupied_count,
+        binNumber
+      ]);
+    }
+
+    res.clearCookie(INTAKE_BIN_COOKIE);
+    res.redirect('/admin/intake');
+  })
+);
 
 router.post(
   '/intake',
@@ -154,19 +171,9 @@ router.post(
       return res.render('admin/intake-upload', { binNumber, error: 'A photo is required.' });
     }
 
-    // Re-check the bin row still exists (bins are never deleted today, only retired via
-    // status, so this is a defensive guard rather than one that currently fires in
-    // practice). Matches the same existence-only check routes/api.js's POST /items uses —
-    // a retired bin can still receive new drafts; status changes are a human decision
-    // (Section 2), not something this route second-guesses.
-    const { rows: binRows } = await pool.query('SELECT bin_number FROM bins WHERE bin_number = $1', [binNumber]);
-    if (binRows.length === 0) {
-      res.clearCookie(INTAKE_BIN_COOKIE);
-      return res.render('admin/intake-open', {
-        lastBin: String(binNumber),
-        error: `Bin ${binNumber} no longer exists. Choose a different bin.`
-      });
-    }
+    // Bins are never deleted (only retired via status), and /intake/open already created
+    // this row — this is just a self-healing no-op guard, not an error path.
+    await pool.query('INSERT INTO bins (bin_number) VALUES ($1) ON CONFLICT (bin_number) DO NOTHING', [binNumber]);
 
     const { key, url } = await uploadPhoto(req.file.buffer, req.file.mimetype);
 
@@ -234,25 +241,6 @@ router.get(
 );
 
 router.post(
-  '/bins',
-  asyncHandler(async (req, res) => {
-    const binNumber = Number(req.body.bin_number);
-    const capacity = req.body.capacity ? Number(req.body.capacity) : 20;
-
-    if (!Number.isInteger(binNumber) || binNumber <= 0) {
-      const { rows: bins } = await pool.query('SELECT * FROM bins ORDER BY bin_number ASC');
-      return res.render('admin/bins', { bins, error: 'Bin number must be a positive integer.' });
-    }
-
-    await pool.query(
-      `INSERT INTO bins (bin_number, capacity) VALUES ($1, $2) ON CONFLICT (bin_number) DO NOTHING`,
-      [binNumber, capacity]
-    );
-    res.redirect('/admin/bins');
-  })
-);
-
-router.post(
   '/bins/:id/retire',
   asyncHandler(async (req, res) => {
     // Retiring/consolidating a bin is a human decision made by tapping a button here —
@@ -279,10 +267,11 @@ router.post(
   asyncHandler(async (req, res) => {
     // Tapped once staff have physically moved the bin's items elsewhere — the bin itself
     // is now empty and available for reuse. This does not move any item; reassigning an
-    // item's bin_number remains a separate, explicit edit.
+    // item's bin_number remains a separate, explicit edit. peak_item_count resets since a
+    // reused bin starts a fresh filling cycle — the old high-water mark no longer applies.
     await pool.query(
       `UPDATE bins
-          SET status = 'active', last_consolidated_at = NOW()
+          SET status = 'active', last_consolidated_at = NOW(), peak_item_count = 0
         WHERE id = $1 AND status = 'needs_consolidation'`,
       [req.params.id]
     );

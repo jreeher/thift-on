@@ -22,7 +22,7 @@
     <% const suggestedCount = bins.filter((b) => b.consolidationSuggested).length; %>
     <% if (suggestedCount > 0) { %>
       <p class="consolidation-banner">
-        <%= suggestedCount %> bin<%= suggestedCount === 1 ? '' : 's' %> below 25% capacity
+        <%= suggestedCount %> bin<%= suggestedCount === 1 ? '' : 's' %> below 25% of its peak fill level
         &mdash; consider consolidating into fewer bins.
       </p>
     <% } %>
@@ -33,7 +33,7 @@
           <th>Bin #</th>
           <th>Status</th>
           <th>Occupied</th>
-          <th>Capacity</th>
+          <th>Peak</th>
           <th></th>
         </tr>
       </thead>
@@ -48,7 +48,7 @@
               <% } %>
             </td>
             <td><%= bin.occupied_count %></td>
-            <td><%= bin.capacity %></td>
+            <td><%= bin.peak_item_count %></td>
             <td class="bin-actions">
               <% if (bin.status === 'active' && bin.consolidationSuggested) { %>
                 <form method="POST" action="/admin/bins/<%= bin.id %>/flag-consolidation">
@@ -71,18 +71,7 @@
       </tbody>
     </table>
 
-    <h2>Create bin</h2>
-    <form method="POST" action="/admin/bins" class="bin-create-form">
-      <label>
-        Bin number
-        <input type="number" name="bin_number" min="1" required>
-      </label>
-      <label>
-        Capacity
-        <input type="number" name="capacity" min="1" value="20">
-      </label>
-      <button type="submit">Create</button>
-    </form>
+    <p class="admin-hint">Bins are created automatically the first time a number is opened in Intake — there's no separate creation step.</p>
   </main>
 </body>
 </html>
