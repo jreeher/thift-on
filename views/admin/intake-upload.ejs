@@ -7,12 +7,9 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <%- include('../partials/admin-header', { active: 'intake' }) %>
+
   <main class="admin-page">
-    <nav class="admin-nav">
-      <a href="/admin/intake">Intake</a>
-      <a href="/admin/review">Review Queue</a>
-      <a href="/admin/bins">Bins</a>
-    </nav>
     <h1>Working in Bin #<%= binNumber %></h1>
 
     <% if (error) { %>
@@ -28,7 +25,7 @@
     </form>
 
     <form method="POST" action="/admin/intake/close">
-      <button type="submit">Close Bin</button>
+      <button type="submit" class="secondary-btn">Close Bin</button>
     </form>
   </main>
 </body>

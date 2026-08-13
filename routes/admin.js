@@ -31,6 +31,10 @@ function intakeCookieOptions(maxAgeMs) {
 router.use(requireStaffAuth);
 router.use(express.urlencoded({ extended: false }));
 
+router.get('/', (req, res) => {
+  res.render('admin/home');
+});
+
 router.get(
   '/review',
   asyncHandler(async (req, res) => {

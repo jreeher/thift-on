@@ -73,71 +73,130 @@ body {
 .admin-page {
   max-width: 900px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 2.5rem 2rem 4rem;
+}
+
+.admin-page h1 {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 1.75rem;
+  color: var(--shop-ink);
+}
+
+.admin-badge {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--shop-accent-soft);
+  color: var(--shop-accent-dark);
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  vertical-align: middle;
+  margin-left: 0.3rem;
 }
 
 .admin-nav {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 0.4rem;
 }
 
 .admin-nav a {
-  color: #1a1a1a;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  color: var(--shop-muted);
   text-decoration: none;
+  font-size: 0.85rem;
   font-weight: 600;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .admin-nav a:hover {
-  text-decoration: underline;
+  color: var(--shop-ink);
+  background: var(--shop-bg);
+}
+
+.admin-nav a.active {
+  background: var(--shop-ink);
+  color: #fff;
+}
+
+.admin-logout-form {
+  margin: 0;
+}
+
+.admin-logout-btn {
+  background: transparent;
+  color: var(--shop-muted);
+  border: 1px solid var(--shop-border);
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-logout-btn:hover {
+  color: var(--shop-ink);
+  border-color: var(--shop-accent);
 }
 
 .error {
-  color: #b00020;
+  background: #fdecea;
+  border: 1px solid #f5c2bc;
+  color: #8a1c12;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
   font-size: 0.9rem;
+  margin-bottom: 1.25rem;
 }
 
 .review-card {
   display: flex;
-  gap: 1.5rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 1rem;
+  gap: 2rem;
+  border: 1px solid var(--shop-border);
+  border-radius: 14px;
+  padding: 1.5rem;
   margin-bottom: 1.5rem;
-  background: #fff;
+  background: var(--shop-surface);
 }
 
 .review-card-photo {
-  flex: 0 0 200px;
+  flex: 0 0 220px;
 }
 
 .review-card-photo img {
   width: 100%;
-  border-radius: 4px;
+  border-radius: 10px;
   display: block;
 }
 
 .review-card-photo .no-photo {
   width: 100%;
-  height: 150px;
-  background: #eee;
+  height: 160px;
+  background: var(--shop-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #888;
-  border-radius: 4px;
+  color: var(--shop-muted);
+  border-radius: 10px;
 }
 
 .ai-confidence {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--shop-muted);
+  margin-top: 0.75rem;
 }
 
 .review-card-form {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.85rem;
 }
 
 .review-card-form label {
@@ -145,65 +204,107 @@ body {
   flex-direction: column;
   font-size: 0.85rem;
   font-weight: 600;
-  gap: 0.25rem;
+  gap: 0.35rem;
+  color: var(--shop-ink);
 }
 
 .review-card-form input,
 .review-card-form select,
 .review-card-form textarea {
   font-weight: normal;
-  padding: 0.4rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  font-family: inherit;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--shop-border);
+  border-radius: 8px;
   font-size: 0.95rem;
+  transition: border-color 0.15s ease;
+}
+
+.review-card-form input:focus,
+.review-card-form select:focus,
+.review-card-form textarea:focus {
+  outline: none;
+  border-color: var(--shop-accent);
 }
 
 .review-card-form button {
   align-self: flex-start;
-  padding: 0.5rem 1rem;
-  background: #1a1a1a;
+  padding: 0.7rem 1.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--shop-accent);
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
   cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.review-card-form button:hover {
+  background: var(--shop-accent-dark);
+  transform: translateY(-1px);
 }
 
 .admin-hint {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--shop-muted);
+  margin-top: 1.5rem;
+}
+
+.consolidation-banner {
+  background: var(--shop-accent-soft);
+  border: 1px solid #ecc9b8;
+  color: var(--shop-accent-dark);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+.bins-table-wrap {
+  border: 1px solid var(--shop-border);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  background: var(--shop-surface);
 }
 
 .bins-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 2rem;
 }
 
 .bins-table th,
 .bins-table td {
   text-align: left;
-  padding: 0.5rem;
-  border-bottom: 1px solid #ddd;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--shop-border);
+  font-size: 0.9rem;
 }
 
-.consolidation-banner {
-  background: #fff3cd;
-  border: 1px solid #ffe08a;
-  border-radius: 6px;
-  padding: 0.6rem 0.8rem;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
+.bins-table th {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--shop-muted);
+  font-weight: 600;
+  background: var(--shop-bg);
+}
+
+.bins-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .suggestion-badge {
   display: inline-block;
-  margin-left: 0.4rem;
-  padding: 0.1rem 0.5rem;
-  background: #fff3cd;
-  border: 1px solid #ffe08a;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.6rem;
+  background: var(--shop-accent-soft);
+  border: 1px solid #ecc9b8;
   border-radius: 999px;
   font-size: 0.7rem;
-  color: #7a5c00;
+  font-weight: 600;
+  color: var(--shop-accent-dark);
 }
 
 .bin-actions {
@@ -213,19 +314,28 @@ body {
 }
 
 .bin-actions button {
-  padding: 0.4rem 0.7rem;
+  padding: 0.45rem 0.85rem;
   font-size: 0.8rem;
-  background: #1a1a1a;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--shop-ink);
+  border: 1px solid var(--shop-border);
+  border-radius: 8px;
   cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.bin-actions button:hover {
+  border-color: var(--shop-accent);
+  color: var(--shop-accent);
 }
 
 .bin-create-form {
   display: flex;
   gap: 1rem;
   align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
 }
 
 .bin-create-form label {
@@ -233,23 +343,99 @@ body {
   flex-direction: column;
   font-size: 0.85rem;
   font-weight: 600;
-  gap: 0.25rem;
+  gap: 0.35rem;
+  color: var(--shop-ink);
 }
 
 .bin-create-form input {
-  padding: 0.4rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--shop-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: border-color 0.15s ease;
+}
+
+.bin-create-form input:focus {
+  outline: none;
+  border-color: var(--shop-accent);
 }
 
 .bin-create-form button {
-  padding: 0.5rem 1rem;
-  background: #1a1a1a;
+  padding: 0.65rem 1.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--shop-accent);
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 10px;
   cursor: pointer;
   height: fit-content;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.bin-create-form button:hover {
+  background: var(--shop-accent-dark);
+  transform: translateY(-1px);
+}
+
+.secondary-btn {
+  padding: 0.65rem 1.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--shop-muted);
+  border: 1px solid var(--shop-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.secondary-btn:hover {
+  color: var(--shop-ink);
+  border-color: var(--shop-accent);
+}
+
+.admin-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.admin-hub-card {
+  display: block;
+  background: var(--shop-surface);
+  border: 1px solid var(--shop-border);
+  border-radius: 14px;
+  padding: 2rem 1.75rem;
+  text-decoration: none;
+  color: var(--shop-ink);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-hub-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -12px rgba(32, 29, 25, 0.18);
+  border-color: var(--shop-accent);
+}
+
+.admin-hub-card svg {
+  color: var(--shop-accent);
+  margin-bottom: 1rem;
+}
+
+.admin-hub-card h2 {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+  color: var(--shop-ink);
+}
+
+.admin-hub-card p {
+  margin: 0;
+  color: var(--shop-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
 .site-header {

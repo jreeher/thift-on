@@ -7,12 +7,9 @@
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+  <%- include('../partials/admin-header', { active: 'intake' }) %>
+
   <main class="admin-page">
-    <nav class="admin-nav">
-      <a href="/admin/intake">Intake</a>
-      <a href="/admin/review">Review Queue</a>
-      <a href="/admin/bins">Bins</a>
-    </nav>
     <h1>Intake</h1>
 
     <% if (error) { %>
