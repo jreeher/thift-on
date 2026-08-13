@@ -54,15 +54,18 @@ router.post(
       category,
       description,
       condition_notes: conditionNotes,
-      price_cents: priceCentsRaw,
+      price_dollars: priceDollarsRaw,
       bin_number: binNumberRaw
     } = req.body;
 
     const finalCategory = ALLOWED_CATEGORIES.includes(category) ? category : 'other';
-    const parsedPrice = Number(priceCentsRaw);
+    // Staff type a dollar amount (the form is never allowed to show raw cents) — this is
+    // the one place that boundary-converts it to the integer cents everything else uses.
+    const parsedDollars = Number(priceDollarsRaw);
+    const parsedCents = Number.isFinite(parsedDollars) && parsedDollars > 0 ? Math.round(parsedDollars * 100) : NaN;
     const priceCents = clampSuggestedPrice(
       finalCategory,
-      Number.isFinite(parsedPrice) && parsedPrice > 0 ? parsedPrice : basePriceForCategory(finalCategory)
+      Number.isFinite(parsedCents) && parsedCents > 0 ? parsedCents : basePriceForCategory(finalCategory)
     );
     const binNumber = binNumberRaw ? Number(binNumberRaw) : null;
 

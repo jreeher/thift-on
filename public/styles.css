@@ -903,43 +903,26 @@ body {
   }
 }
 
-.staff-header {
-  background: #1a1a1a;
-  color: #fff;
-  padding: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: sticky;
-  top: 0;
-}
-
-.staff-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.logout-btn {
-  background: transparent;
-  color: #fff;
-  border: 1px solid #fff;
-  border-radius: 4px;
-  padding: 0.4rem 0.8rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
 .staff-page {
-  max-width: 500px;
+  max-width: 520px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.staff-page h1 {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 1.5rem;
+  color: var(--shop-ink);
 }
 
 .order-card {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 1rem;
+  background: var(--shop-surface);
+  border: 1px solid var(--shop-border);
+  border-radius: 14px;
+  padding: 1.25rem;
   margin-bottom: 1.25rem;
 }
 
@@ -947,26 +930,29 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #eee;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--shop-border);
 }
 
 .order-number {
-  font-size: 1.1rem;
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--shop-ink);
 }
 
 .order-customer {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--shop-muted);
 }
 
 .fulfillment-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid #f0f0f0;
+  gap: 0.85rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--shop-bg);
 }
 
 .fulfillment-item:last-of-type {
@@ -976,25 +962,25 @@ body {
 .fulfillment-item-photo {
   flex: 0 0 60px;
   height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .fulfillment-item-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 4px;
   display: block;
 }
 
 .fulfillment-item-photo .no-photo {
   width: 100%;
   height: 100%;
-  background: #eee;
-  border-radius: 4px;
+  background: var(--shop-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #888;
+  color: var(--shop-muted);
   font-size: 0.65rem;
 }
 
@@ -1007,6 +993,7 @@ body {
   margin: 0 0 0.2rem;
   font-weight: 600;
   font-size: 0.95rem;
+  color: var(--shop-ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1015,19 +1002,24 @@ body {
 .fulfillment-item-bin {
   margin: 0;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--shop-muted);
 }
 
 .pull-btn {
   flex: 0 0 auto;
-  padding: 0.9rem 1.1rem;
-  font-size: 0.95rem;
+  padding: 0.85rem 1.1rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  background: #1a1a1a;
+  background: var(--shop-accent);
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.pull-btn:hover {
+  background: var(--shop-accent-dark);
 }
 
 .pulled-badge {
@@ -1046,6 +1038,12 @@ body {
   background: #1a7a3a;
   color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.pickup-btn:hover {
+  background: #15642f;
+  transform: translateY(-1px);
 }

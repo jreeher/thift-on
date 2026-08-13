@@ -29,8 +29,14 @@
       <textarea name="condition_notes" rows="2"><%= item.condition_notes || '' %></textarea>
     </label>
     <label>
-      Price (cents)
-      <input type="number" name="price_cents" min="1" value="<%= item.price_original_cents || '' %>">
+      Price ($)
+      <input
+        type="number"
+        name="price_dollars"
+        min="0.01"
+        step="0.01"
+        value="<%= item.price_original_cents ? (item.price_original_cents / 100).toFixed(2) : '' %>"
+      >
     </label>
     <label>
       Bin number
