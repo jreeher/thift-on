@@ -463,9 +463,20 @@ body {
   text-decoration: none;
 }
 
-.site-title svg {
-  color: var(--shop-accent);
+.site-logo {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
   flex: 0 0 auto;
+  background-color: var(--shop-accent);
+  -webkit-mask-image: url('/logo-mask.png');
+  mask-image: url('/logo-mask.png');
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
 }
 
 .cart-link {
