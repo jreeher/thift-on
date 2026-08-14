@@ -11,7 +11,7 @@
         <circle cx="19" cy="21" r="1"></circle>
         <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 2-1.55l1.65-7.45H5.12"></path>
       </svg>
-      Cart
+      Cart<% if (cartCount > 0) { %> (<%= cartCount %>)<% } %>
     </a>
   </nav>
 </header>

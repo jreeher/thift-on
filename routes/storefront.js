@@ -22,6 +22,19 @@ async function loadCartItems(cartToken) {
 router.use(ensureCartToken);
 router.use(express.urlencoded({ extended: false }));
 
+// Available to every storefront view via res.locals, so the header's cart count doesn't
+// need each route to remember to pass it in explicitly.
+router.use(
+  asyncHandler(async (req, res, next) => {
+    const { rows } = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM items WHERE reserved_by_cart = $1 AND status = 'reserved'`,
+      [req.cartToken]
+    );
+    res.locals.cartCount = rows[0].count;
+    next();
+  })
+);
+
 router.get(
   '/',
   asyncHandler(async (req, res) => {
@@ -95,8 +108,10 @@ router.post(
       [req.cartToken, itemId]
     );
 
+    // Back to browsing rather than straight to the cart — the header's cart count is
+    // what confirms the add, so there's no need to interrupt shopping to see it.
     if (rows.length > 0) {
-      return res.redirect('/cart');
+      return res.redirect('/');
     }
 
     // Zero rows can mean someone else grabbed it first, or this cart already holds it
@@ -107,7 +122,7 @@ router.post(
     );
 
     if (existing.length > 0) {
-      return res.redirect('/cart');
+      return res.redirect('/');
     }
 
     res.redirect(`/item/${itemId}?unavailable=1`);
