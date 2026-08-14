@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/admin-header', { active: 'reports' }) %>
+
+  <main class="admin-page">
+    <h1>Reports</h1>
+
+    <nav class="category-filter">
+      <a href="/admin/reports?section=items" class="<%= section === 'items' ? 'active' : '' %>">Items</a>
+      <a href="/admin/reports?section=orders" class="<%= section === 'orders' ? 'active' : '' %>">Orders</a>
+      <a href="/admin/reports?section=donors" class="<%= section === 'donors' ? 'active' : '' %>">Donors</a>
+      <a href="/admin/reports?section=bins" class="<%= section === 'bins' ? 'active' : '' %>">Bins</a>
+    </nav>
+
+    <form method="GET" action="/admin/reports" class="report-filter-form">
+      <input type="hidden" name="section" value="<%= section %>">
+
+      <% if (section === 'items') { %>
+        <label>
+          Status
+          <select name="status">
+            <option value="">All</option>
+            <% itemStatuses.forEach((s) => { %>
+              <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Category
+          <select name="category">
+            <option value="">All</option>
+            <% categories.forEach((c) => { %>
+              <option value="<%= c %>" <%= filters.category === c ? 'selected' : '' %>><%= c.replace('_', ' ') %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Bin #
+          <input type="number" name="bin_number" min="1" value="<%= filters.bin_number || '' %>">
+        </label>
+        <label>
+          Donor ID
+          <input type="number" name="donor_id" min="1" value="<%= filters.donor_id || '' %>">
+        </label>
+        <label>
+          Created from
+          <input type="date" name="start_date" value="<%= filters.start_date || '' %>">
+        </label>
+        <label>
+          Created to
+          <input type="date" name="end_date" value="<%= filters.end_date || '' %>">
+        </label>
+      <% } else if (section === 'orders') { %>
+        <label>
+          Status
+          <select name="status">
+            <option value="">All</option>
+            <% orderStatuses.forEach((s) => { %>
+              <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>
+          Paid from
+          <input type="date" name="start_date" value="<%= filters.start_date || '' %>">
+        </label>
+        <label>
+          Paid to
+          <input type="date" name="end_date" value="<%= filters.end_date || '' %>">
+        </label>
+      <% } else if (section === 'donors') { %>
+        <label>
+          Donor ID
+          <input type="number" name="donor_id" min="1" value="<%= filters.donor_id || '' %>">
+        </label>
+        <label>
+          Sold from
+          <input type="date" name="start_date" value="<%= filters.start_date || '' %>">
+        </label>
+        <label>
+          Sold to
+          <input type="date" name="end_date" value="<%= filters.end_date || '' %>">
+        </label>
+      <% } else if (section === 'bins') { %>
+        <label>
+          Status
+          <select name="status">
+            <option value="">All</option>
+            <% binStatuses.forEach((s) => { %>
+              <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+            <% }) %>
+          </select>
+        </label>
+      <% } %>
+
+      <button type="submit">Run Report</button>
+      <a href="/admin/reports?section=<%= section %>" class="report-clear-link">Clear filters</a>
+    </form>
+
+    <% if (section === 'donors' && totals) { %>
+      <p class="report-summary">
+        Totals for shown donors: <%= totals.itemsSoldCount %> item<%= totals.itemsSoldCount === 1 ? '' : 's' %> sold,
+        $<%= (totals.totalValueSoldCents / 100).toFixed(2) %> total value
+      </p>
+    <% } %>
+
+    <div class="bins-table-wrap">
+      <table class="bins-table">
+        <% if (section === 'items') { %>
+          <thead>
+            <tr>
+              <th>ID</th><th>Title</th><th>Category</th><th>Status</th><th>Bin</th><th>Donor</th>
+              <th>Original</th><th>Current</th><th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (rows.length === 0) { %>
+              <tr><td colspan="9">No items match these filters.</td></tr>
+            <% } %>
+            <% rows.forEach((item) => { %>
+              <tr>
+                <td>#<%= item.id %></td>
+                <td><%= item.title || '—' %></td>
+                <td><%= (item.category || '—').replace('_', ' ') %></td>
+                <td><%= item.status %></td>
+                <td><%= item.bin_number || '—' %></td>
+                <td><%= item.donor_id ? ('#' + item.donor_id + ' (' + item.donor_phone + ')') : '—' %></td>
+                <td><%= item.price_original_cents != null ? '$' + (item.price_original_cents / 100).toFixed(2) : '—' %></td>
+                <td><%= item.price_current_cents != null ? '$' + (item.price_current_cents / 100).toFixed(2) : '—' %></td>
+                <td><%= item.created_at.toLocaleDateString() %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        <% } else if (section === 'orders') { %>
+          <thead>
+            <tr>
+              <th>Order #</th><th>Customer</th><th>Status</th><th>Subtotal</th><th>Created</th><th>Paid</th><th>Completed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (rows.length === 0) { %>
+              <tr><td colspan="7">No orders match these filters.</td></tr>
+            <% } %>
+            <% rows.forEach((order) => { %>
+              <tr>
+                <td><%= order.order_number %></td>
+                <td><%= order.customer_email %></td>
+                <td><%= order.status %></td>
+                <td>$<%= (order.subtotal_cents / 100).toFixed(2) %></td>
+                <td><%= order.created_at.toLocaleDateString() %></td>
+                <td><%= order.paid_at ? order.paid_at.toLocaleDateString() : '—' %></td>
+                <td><%= order.completed_at ? order.completed_at.toLocaleDateString() : '—' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        <% } else if (section === 'donors') { %>
+          <thead>
+            <tr>
+              <th>Donor</th><th>Phone</th><th>Registered</th><th>Items Donated</th><th>Items Sold</th><th>Value Sold</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (rows.length === 0) { %>
+              <tr><td colspan="6">No donors match these filters.</td></tr>
+            <% } %>
+            <% rows.forEach((donor) => { %>
+              <tr>
+                <td>#<%= donor.id %></td>
+                <td><%= donor.phone_number %></td>
+                <td><%= donor.created_at.toLocaleDateString() %></td>
+                <td><%= donor.items_donated_count %></td>
+                <td><%= donor.items_sold_count %></td>
+                <td>$<%= (donor.total_value_sold_cents / 100).toFixed(2) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        <% } else if (section === 'bins') { %>
+          <thead>
+            <tr>
+              <th>Bin #</th><th>Status</th><th>Occupied</th><th>Peak</th><th>Last Consolidated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (rows.length === 0) { %>
+              <tr><td colspan="5">No bins match these filters.</td></tr>
+            <% } %>
+            <% rows.forEach((bin) => { %>
+              <tr>
+                <td><%= bin.bin_number %></td>
+                <td><%= bin.status %></td>
+                <td><%= bin.occupied_count %></td>
+                <td><%= bin.peak_item_count %></td>
+                <td><%= bin.last_consolidated_at ? bin.last_consolidated_at.toLocaleDateString() : '—' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        <% } %>
+      </table>
+    </div>
+
+    <% if (rows.length === resultLimit) { %>
+      <p class="report-truncation-note">
+        Showing the latest <%= resultLimit %> results — narrow your filters to see more specific results.
+      </p>
+    <% } %>
+  </main>
+</body>
+</html>

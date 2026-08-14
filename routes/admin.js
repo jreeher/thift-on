@@ -7,6 +7,16 @@ const { ALLOWED_CATEGORIES, clampSuggestedPrice, basePriceForCategory } = requir
 const { isConsolidationCandidate } = require('../lib/bins');
 const { uploadPhoto } = require('../lib/storage');
 const { analyzeItemPhoto } = require('../lib/ai');
+const {
+  RESULT_LIMIT: REPORT_RESULT_LIMIT,
+  ITEM_STATUSES,
+  ORDER_STATUSES,
+  BIN_STATUSES,
+  getItemsReport,
+  getOrdersReport,
+  getDonorsReport,
+  getBinsReport
+} = require('../lib/reports');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -377,6 +387,58 @@ router.post(
     );
 
     res.redirect(`/admin/donations?donor_id=${rows[0].id}`);
+  })
+);
+
+const REPORT_SECTIONS = ['items', 'orders', 'donors', 'bins'];
+
+router.get(
+  '/reports',
+  asyncHandler(async (req, res) => {
+    const section = REPORT_SECTIONS.includes(req.query.section) ? req.query.section : 'items';
+
+    const binNumberRaw = req.query.bin_number ? Number(req.query.bin_number) : null;
+    const donorIdRaw = req.query.donor_id ? Number(req.query.donor_id) : null;
+
+    const filters = {
+      status: req.query.status || null,
+      category: req.query.category || null,
+      binNumber: Number.isInteger(binNumberRaw) ? binNumberRaw : null,
+      donorId: Number.isInteger(donorIdRaw) ? donorIdRaw : null,
+      startDate: req.query.start_date || null,
+      endDate: req.query.end_date || null
+    };
+
+    let rows = [];
+    if (section === 'items') rows = await getItemsReport(filters);
+    else if (section === 'orders') rows = await getOrdersReport(filters);
+    else if (section === 'donors') rows = await getDonorsReport(filters);
+    else if (section === 'bins') rows = await getBinsReport(filters);
+
+    // Only meaningful for the donors section, where "value sold" across everyone shown
+    // is itself a useful number (e.g. "how much did all donors' items sell for this month").
+    const totals =
+      section === 'donors'
+        ? rows.reduce(
+            (acc, row) => ({
+              itemsSoldCount: acc.itemsSoldCount + Number(row.items_sold_count),
+              totalValueSoldCents: acc.totalValueSoldCents + Number(row.total_value_sold_cents)
+            }),
+            { itemsSoldCount: 0, totalValueSoldCents: 0 }
+          )
+        : null;
+
+    res.render('admin/reports', {
+      section,
+      filters: req.query,
+      rows,
+      totals,
+      itemStatuses: ITEM_STATUSES,
+      orderStatuses: ORDER_STATUSES,
+      binStatuses: BIN_STATUSES,
+      categories: ALLOWED_CATEGORIES,
+      resultLimit: REPORT_RESULT_LIMIT
+    });
   })
 );
 

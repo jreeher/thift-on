@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('../db/pool');
-const { ALLOWED_CATEGORIES, nextMarkdown } = require('../lib/pricing');
+const { ALLOWED_CATEGORIES } = require('../lib/pricing');
 const { ensureCartToken } = require('../middleware/cart');
 const { createCheckoutSession } = require('../lib/stripe');
 
@@ -58,12 +58,13 @@ router.get(
       return res.status(404).render('storefront/not-found', { message });
     }
 
-    const item = rows[0];
-    const markdown = nextMarkdown(item.price_original_cents, item.listed_at);
-
-    res.render('storefront/item', { item, markdown });
+    res.render('storefront/item', { item: rows[0] });
   })
 );
+
+router.get('/about', (req, res) => {
+  res.render('storefront/about');
+});
 
 router.get(
   '/cart',

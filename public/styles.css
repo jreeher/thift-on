@@ -101,6 +101,7 @@ body {
 
 .admin-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.4rem;
 }
 
@@ -306,6 +307,83 @@ body {
 .intake-donor-form input:focus {
   outline: none;
   border-color: var(--shop-accent);
+}
+
+.report-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+  background: var(--shop-surface);
+  border: 1px solid var(--shop-border);
+  border-radius: 14px;
+  padding: 1.25rem;
+}
+
+.report-filter-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  font-weight: 600;
+  gap: 0.35rem;
+  color: var(--shop-ink);
+}
+
+.report-filter-form input,
+.report-filter-form select {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--shop-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.report-filter-form input:focus,
+.report-filter-form select:focus {
+  outline: none;
+  border-color: var(--shop-accent);
+}
+
+.report-filter-form button {
+  padding: 0.65rem 1.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  background: var(--shop-accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.report-filter-form button:hover {
+  background: var(--shop-accent-dark);
+  transform: translateY(-1px);
+}
+
+.report-clear-link {
+  font-size: 0.85rem;
+  color: var(--shop-muted);
+  text-decoration: none;
+  align-self: center;
+}
+
+.report-clear-link:hover {
+  color: var(--shop-ink);
+}
+
+.report-summary {
+  font-weight: 700;
+  color: var(--shop-ink);
+  margin: 0 0 1.25rem;
+}
+
+.report-truncation-note {
+  font-size: 0.85rem;
+  color: var(--shop-muted);
+  margin-top: 0.75rem;
 }
 
 .consolidation-banner {
@@ -536,6 +614,26 @@ body {
   mask-position: center;
 }
 
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.site-nav-link {
+  color: var(--shop-ink);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  transition: background-color 0.15s ease;
+}
+
+.site-nav-link:hover {
+  background: var(--shop-bg);
+}
+
 .cart-link {
   display: flex;
   align-items: center;
@@ -554,10 +652,49 @@ body {
 }
 
 .storefront-page,
-.item-page {
+.item-page,
+.about-page {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2.5rem 2rem 4rem;
+}
+
+.about-page {
+  max-width: 720px;
+}
+
+.about-page h1 {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+  color: var(--shop-ink);
+}
+
+.about-intro {
+  font-size: 1.05rem;
+  color: var(--shop-muted);
+  line-height: 1.6;
+  margin-bottom: 2.5rem;
+}
+
+.about-section {
+  margin-bottom: 2rem;
+}
+
+.about-section h2 {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--shop-ink);
+  margin: 0 0 0.5rem;
+}
+
+.about-section p {
+  color: var(--shop-ink);
+  line-height: 1.65;
+  margin: 0;
 }
 
 .category-filter {
@@ -738,16 +875,6 @@ body {
   letter-spacing: -0.02em;
   margin: 0 0 1rem;
   color: var(--shop-ink);
-}
-
-.markdown-note {
-  background: var(--shop-accent-soft);
-  border: 1px solid #ecc9b8;
-  color: var(--shop-accent-dark);
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  font-size: 0.9rem;
-  line-height: 1.4;
 }
 
 .item-description {

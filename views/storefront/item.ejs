@@ -26,14 +26,6 @@
         <p class="item-category"><%= (item.category || '').replace('_', ' ') %></p>
         <p class="item-price">$<%= (item.price_current_cents / 100).toFixed(2) %></p>
 
-        <% if (markdown) { %>
-          <p class="markdown-note">
-            Price drops to $<%= (markdown.nextPriceCents / 100).toFixed(2) %>
-            on <%= markdown.nextDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) %>
-            &mdash; buy now to lock in today's price.
-          </p>
-        <% } %>
-
         <p class="item-description"><%= item.description %></p>
 
         <% if (item.condition_notes) { %>
