@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Donations</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/admin-header', { active: 'donations' }) %>
+
+  <main class="admin-page">
+    <h1>Donations</h1>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <% if (registeredDonor) { %>
+      <p class="success-banner">
+        Donor ID <strong>#<%= registeredDonor.id %></strong> &mdash; <%= registeredDonor.phone_number %>
+      </p>
+    <% } %>
+
+    <form method="POST" action="/admin/donations" class="bin-create-form">
+      <label>
+        Donor phone number
+        <input type="tel" name="phone_number" required autofocus placeholder="(555) 123-4567">
+      </label>
+      <button type="submit">Register Donor</button>
+    </form>
+
+    <p class="admin-hint">
+      Entering a phone number that's already registered returns their existing donor ID
+      instead of creating a new one.
+    </p>
+  </main>
+</body>
+</html>

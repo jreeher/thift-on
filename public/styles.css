@@ -251,6 +251,63 @@ body {
   margin-top: 1.5rem;
 }
 
+.success-banner {
+  background: #eaf7ee;
+  border: 1px solid #b8e0c2;
+  color: #1a7a3a;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  margin-bottom: 1.25rem;
+}
+
+.intake-session-bar {
+  background: var(--shop-surface);
+  border: 1px solid var(--shop-border);
+  border-radius: 14px;
+  padding: 0.25rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.intake-session-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.85rem 0;
+}
+
+.intake-session-row + .intake-session-row {
+  border-top: 1px solid var(--shop-border);
+}
+
+.intake-session-label {
+  font-weight: 600;
+  color: var(--shop-ink);
+  font-size: 0.95rem;
+}
+
+.intake-donor-form {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.intake-donor-form input {
+  width: 90px;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--shop-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease;
+}
+
+.intake-donor-form input:focus {
+  outline: none;
+  border-color: var(--shop-accent);
+}
+
 .consolidation-banner {
   background: var(--shop-accent-soft);
   border: 1px solid #ecc9b8;

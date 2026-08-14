@@ -17,6 +17,7 @@ function asyncHandler(fn) {
 
 const INTAKE_BIN_COOKIE = 'intake_bin';
 const LAST_INTAKE_BIN_COOKIE = 'last_intake_bin';
+const INTAKE_DONOR_COOKIE = 'intake_donor';
 
 function intakeCookieOptions(maxAgeMs) {
   return {
@@ -26,6 +27,13 @@ function intakeCookieOptions(maxAgeMs) {
     secure: process.env.NODE_ENV === 'production',
     maxAge: maxAgeMs
   };
+}
+
+async function loadCurrentDonor(req) {
+  const donorId = req.signedCookies[INTAKE_DONOR_COOKIE];
+  if (!donorId) return null;
+  const { rows } = await pool.query('SELECT * FROM donors WHERE id = $1', [Number(donorId)]);
+  return rows[0] || null;
 }
 
 router.use(requireStaffAuth);
@@ -113,7 +121,8 @@ router.get(
         error: null
       });
     }
-    res.render('admin/intake-upload', { binNumber: openBin, error: null });
+    const donor = await loadCurrentDonor(req);
+    res.render('admin/intake-upload', { binNumber: openBin, donor, error: null });
   })
 );
 
@@ -165,6 +174,48 @@ router.post(
 );
 
 router.post(
+  '/intake/donor',
+  asyncHandler(async (req, res) => {
+    const openBin = req.signedCookies[INTAKE_BIN_COOKIE];
+    if (!openBin) {
+      return res.redirect('/admin/intake');
+    }
+
+    // An empty submission is how "Change Donor" clears the current donor back to none.
+    const donorIdRaw = (req.body.donor_id || '').trim();
+    if (donorIdRaw === '') {
+      res.clearCookie(INTAKE_DONOR_COOKIE);
+      return res.redirect('/admin/intake');
+    }
+
+    const donorId = Number(donorIdRaw);
+    if (!Number.isInteger(donorId)) {
+      const donor = await loadCurrentDonor(req);
+      return res.render('admin/intake-upload', {
+        binNumber: openBin,
+        donor,
+        error: 'Donor ID must be an integer.'
+      });
+    }
+
+    // Donor ids come from the Donations page, not typed freely like a bin number — a
+    // donor row must already exist, so a typo doesn't silently attach items to nobody.
+    const { rows } = await pool.query('SELECT id FROM donors WHERE id = $1', [donorId]);
+    if (rows.length === 0) {
+      const donor = await loadCurrentDonor(req);
+      return res.render('admin/intake-upload', {
+        binNumber: openBin,
+        donor,
+        error: `Donor #${donorId} not found — register them on the Donations page first.`
+      });
+    }
+
+    res.cookie(INTAKE_DONOR_COOKIE, String(donorId), intakeCookieOptions(12 * 60 * 60 * 1000));
+    res.redirect('/admin/intake');
+  })
+);
+
+router.post(
   '/intake',
   upload.single('photo'),
   asyncHandler(async (req, res) => {
@@ -173,9 +224,12 @@ router.post(
       return res.redirect('/admin/intake');
     }
     const binNumber = Number(openBin);
+    const donorIdCookie = req.signedCookies[INTAKE_DONOR_COOKIE];
+    const donorId = donorIdCookie ? Number(donorIdCookie) : null;
 
     if (!req.file) {
-      return res.render('admin/intake-upload', { binNumber, error: 'A photo is required.' });
+      const donor = await loadCurrentDonor(req);
+      return res.render('admin/intake-upload', { binNumber, donor, error: 'A photo is required.' });
     }
 
     // Bins are never deleted (only retired via status), and /intake/open already created
@@ -189,12 +243,13 @@ router.post(
 
     const { rows } = await pool.query(
       `INSERT INTO items (
-         bin_number, photo_key, photo_url, title, category, description, condition_notes,
+         bin_number, donor_id, photo_key, photo_url, title, category, description, condition_notes,
          ai_raw_response, ai_confidence, price_original_cents, price_current_cents, status
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, 'draft')
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, 'draft')
        RETURNING id`,
       [
         binNumber,
+        donorId,
         key,
         url,
         fields.title,
@@ -283,6 +338,45 @@ router.post(
       [req.params.id]
     );
     res.redirect('/admin/bins');
+  })
+);
+
+router.get(
+  '/donations',
+  asyncHandler(async (req, res) => {
+    const registeredDonorId = req.query.donor_id ? Number(req.query.donor_id) : NaN;
+    let registeredDonor = null;
+    if (Number.isInteger(registeredDonorId)) {
+      const { rows } = await pool.query('SELECT * FROM donors WHERE id = $1', [registeredDonorId]);
+      registeredDonor = rows[0] || null;
+    }
+    res.render('admin/donations', { registeredDonor, error: null });
+  })
+);
+
+router.post(
+  '/donations',
+  asyncHandler(async (req, res) => {
+    const normalizedPhone = (req.body.phone_number || '').replace(/\D/g, '');
+
+    if (normalizedPhone.length < 7) {
+      return res.render('admin/donations', {
+        registeredDonor: null,
+        error: 'Enter a valid phone number.'
+      });
+    }
+
+    // Keyed on phone_number so a repeat donor reuses their existing donor id instead of
+    // getting a second one — this UPDATE is a no-op, just here so RETURNING still fires
+    // on a conflict.
+    const { rows } = await pool.query(
+      `INSERT INTO donors (phone_number) VALUES ($1)
+       ON CONFLICT (phone_number) DO UPDATE SET phone_number = EXCLUDED.phone_number
+       RETURNING id`,
+      [normalizedPhone]
+    );
+
+    res.redirect(`/admin/donations?donor_id=${rows[0].id}`);
   })
 );
 

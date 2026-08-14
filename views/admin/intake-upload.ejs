@@ -10,11 +10,29 @@
   <%- include('../partials/admin-header', { active: 'intake' }) %>
 
   <main class="admin-page">
-    <h1>Working in Bin #<%= binNumber %></h1>
+    <h1>Intake</h1>
 
     <% if (error) { %>
       <p class="error"><%= error %></p>
     <% } %>
+
+    <div class="intake-session-bar">
+      <div class="intake-session-row">
+        <span class="intake-session-label">Bin #<%= binNumber %></span>
+        <form method="POST" action="/admin/intake/close">
+          <button type="submit" class="secondary-btn">Close Bin</button>
+        </form>
+      </div>
+      <div class="intake-session-row">
+        <span class="intake-session-label">
+          <% if (donor) { %>Donor #<%= donor.id %> (<%= donor.phone_number %>)<% } else { %>No donor set<% } %>
+        </span>
+        <form method="POST" action="/admin/intake/donor" class="intake-donor-form">
+          <input type="number" name="donor_id" min="1" placeholder="Donor ID" value="<%= donor ? donor.id : '' %>">
+          <button type="submit" class="secondary-btn">Change Donor</button>
+        </form>
+      </div>
+    </div>
 
     <form method="POST" action="/admin/intake" enctype="multipart/form-data" class="bin-create-form">
       <label>
@@ -22,10 +40,6 @@
         <input type="file" name="photo" accept="image/*" capture="environment" required>
       </label>
       <button type="submit">Upload &amp; Draft</button>
-    </form>
-
-    <form method="POST" action="/admin/intake/close">
-      <button type="submit" class="secondary-btn">Close Bin</button>
     </form>
   </main>
 </body>
