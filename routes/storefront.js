@@ -244,7 +244,21 @@ router.post(
     const donorPhone = String(req.body.donor_phone || '').replace(/\D/g, '');
     const requestedCreditCents = req.body.credit_dollars ? Math.round(Number(req.body.credit_dollars) * 100) : 0;
 
-    if (donorPhone && requestedCreditCents > 0 && !isCreditLookupRateLimited(req.ip)) {
+    if (donorPhone && requestedCreditCents > 0) {
+      if (isCreditLookupRateLimited(req.ip)) {
+        // The customer explicitly asked to apply credit they already saw confirmed on the
+        // cart page — silently charging full price instead would be a surprise. Surface it
+        // the same way the cart page itself does, rather than falling through unannounced.
+        return res.render('storefront/cart', {
+          items,
+          subtotalCents,
+          error: 'Too many attempts — please wait a moment and try checkout again.',
+          donorPhone,
+          donorBalanceCents: null,
+          creditLookupRateLimited: false
+        });
+      }
+
       const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [donorPhone]);
       if (donorRows.length > 0) {
         donorId = donorRows[0].id;
