@@ -1,17 +1,41 @@
-<header class="site-header">
+<header class="site-header admin-site-header">
   <a class="site-title" href="/admin">
     <span class="site-logo" aria-hidden="true"></span>
     Thrift On <span class="admin-badge">Admin</span>
   </a>
-  <nav class="admin-nav">
-    <a href="/admin/intake" class="<%= active === 'intake' ? 'active' : '' %>">Intake</a>
-    <a href="/admin/donations" class="<%= active === 'donations' ? 'active' : '' %>">Donations</a>
-    <a href="/admin/review" class="<%= active === 'review' ? 'active' : '' %>">Review Queue</a>
-    <a href="/admin/bins" class="<%= active === 'bins' ? 'active' : '' %>">Bins</a>
-    <a href="/staff/fulfillment" class="<%= active === 'fulfillment' ? 'active' : '' %>">Fulfillment</a>
-    <a href="/admin/reports" class="<%= active === 'reports' ? 'active' : '' %>">Reports</a>
-  </nav>
-  <form method="POST" action="/logout" class="admin-logout-form">
-    <button type="submit" class="admin-logout-btn">Log out</button>
-  </form>
+
+  <button type="button" class="admin-menu-toggle" aria-expanded="false" aria-controls="admin-menu" aria-label="Toggle menu">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 6h16"></path>
+      <path d="M4 12h16"></path>
+      <path d="M4 18h16"></path>
+    </svg>
+  </button>
+
+  <div class="admin-menu" id="admin-menu">
+    <nav class="admin-nav">
+      <a href="/admin/intake" class="<%= active === 'intake' ? 'active' : '' %>">Intake</a>
+      <a href="/admin/donations" class="<%= active === 'donations' ? 'active' : '' %>">Donations</a>
+      <a href="/admin/inventory" class="<%= active === 'inventory' ? 'active' : '' %>">Inventory</a>
+      <a href="/admin/bins" class="<%= active === 'bins' ? 'active' : '' %>">Bins</a>
+      <a href="/staff/fulfillment" class="<%= active === 'fulfillment' ? 'active' : '' %>">Fulfillment</a>
+      <a href="/admin/reports" class="<%= active === 'reports' ? 'active' : '' %>">Reports</a>
+      <a href="/" class="admin-view-store-link" target="_blank" rel="noopener noreferrer">View Store</a>
+    </nav>
+    <form method="POST" action="/logout" class="admin-logout-form">
+      <button type="submit" class="admin-logout-btn">Log out</button>
+    </form>
+  </div>
 </header>
+
+<script>
+  (function () {
+    var toggle = document.querySelector('.admin-menu-toggle');
+    var menu = document.getElementById('admin-menu');
+    if (!toggle || !menu) return;
+    toggle.addEventListener('click', function () {
+      var isOpen = menu.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+  })();
+</script>

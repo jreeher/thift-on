@@ -53,13 +53,110 @@ router.get('/', (req, res) => {
   res.render('admin/home');
 });
 
+const INVENTORY_STATUS_LABELS = {
+  draft: 'Draft',
+  active: 'Active',
+  reserved: 'Reserved',
+  sold_pending_pull: 'Sold',
+  pulled: 'Pulled',
+  picked_up: 'Picked Up',
+  expired: 'Expired',
+  removed: 'Removed'
+};
+
+// draft keeps the existing AI-draft review form; active/reserved get an editable card;
+// everything else (mid-transaction or terminal statuses) is read-only, since editing a
+// sold/historical item doesn't fit the state machine (Section 6).
+function inventoryCardVariant(status) {
+  if (status === 'draft') return 'draft';
+  if (status === 'active' || status === 'reserved') return 'editable';
+  return 'readonly';
+}
+
 router.get(
-  '/review',
+  '/inventory',
   asyncHandler(async (req, res) => {
-    const { rows: items } = await pool.query(
-      `SELECT * FROM items WHERE status = 'draft' ORDER BY created_at ASC`
+    const status = ITEM_STATUSES.includes(req.query.status) ? req.query.status : 'draft';
+    const { rows: items } = await pool.query(`SELECT * FROM items WHERE status = $1 ORDER BY created_at ASC`, [
+      status
+    ]);
+    res.render('admin/inventory', {
+      items,
+      status,
+      statuses: ITEM_STATUSES,
+      statusLabels: INVENTORY_STATUS_LABELS,
+      cardVariant: inventoryCardVariant(status),
+      // Only expired items get a Remove button among the read-only statuses — sold/pulled/
+      // picked-up items are mid-transaction or historical, and hiding removal there avoids
+      // someone accidentally erasing a real sale from the record.
+      canRemove: status === 'expired',
+      categories: ALLOWED_CATEGORIES
+    });
+  })
+);
+
+// Old bookmarks/links to the review queue land on the same page, on the draft tab.
+router.get('/review', (req, res) => {
+  res.redirect('/admin/inventory');
+});
+
+router.post(
+  '/inventory/:id/edit',
+  asyncHandler(async (req, res) => {
+    const itemId = Number(req.params.id);
+    const {
+      title,
+      category,
+      description,
+      condition_notes: conditionNotes,
+      bin_number: binNumberRaw,
+      status: returnStatus
+    } = req.body;
+
+    const finalCategory = ALLOWED_CATEGORIES.includes(category) ? category : 'other';
+    const binNumber = binNumberRaw ? Number(binNumberRaw) : null;
+
+    // A plain field update, not a lifecycle transition — status doesn't change, so this
+    // intentionally doesn't go through transitionItem (which only permits the fixed set of
+    // transitions in db/transitions.js). Price isn't editable here: it interacts with the
+    // automatic markdown schedule (Section 7), which needs its own design.
+    await pool.query(
+      `UPDATE items
+          SET title = $1, category = $2, description = $3, condition_notes = $4,
+              bin_number = $5, human_edited = TRUE, updated_at = NOW()
+        WHERE id = $6`,
+      [title || null, finalCategory, description || null, conditionNotes || null, binNumber, itemId]
     );
-    res.render('admin/review', { items, categories: ALLOWED_CATEGORIES, error: null });
+
+    res.redirect(`/admin/inventory?status=${encodeURIComponent(returnStatus || 'active')}`);
+  })
+);
+
+router.post(
+  '/inventory/:id/remove',
+  asyncHandler(async (req, res) => {
+    const itemId = Number(req.params.id);
+    const returnStatus = req.body.status || 'active';
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const { rows } = await client.query('SELECT status FROM items WHERE id = $1 FOR UPDATE', [itemId]);
+      if (rows.length > 0) {
+        // "any -> removed" is always valid (Section 6) — read the row's actual current
+        // status rather than trusting the form's snapshot, in case it changed since the
+        // page was rendered.
+        await transitionItem(client, itemId, rows[0].status, 'removed');
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+
+    res.redirect(`/admin/inventory?status=${encodeURIComponent(returnStatus)}`);
   })
 );
 
@@ -111,7 +208,7 @@ router.post(
       );
 
       await client.query('COMMIT');
-      res.redirect('/admin/review');
+      res.redirect('/admin/inventory');
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;

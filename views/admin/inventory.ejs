@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/admin-header', { active: 'inventory' }) %>
+
+  <main class="admin-page">
+    <h1>Inventory</h1>
+
+    <nav class="category-filter">
+      <% statuses.forEach((s) => { %>
+        <a href="/admin/inventory?status=<%= s %>" class="<%= status === s ? 'active' : '' %>"><%= statusLabels[s] %></a>
+      <% }) %>
+    </nav>
+
+    <% if (items.length === 0) { %>
+      <p class="empty-state">No <%= statusLabels[status].toLowerCase() %> items.</p>
+    <% } %>
+
+    <% items.forEach((item) => { %>
+      <% if (cardVariant === 'draft') { %>
+        <%- include('../partials/item-review-card', { item, categories }) %>
+      <% } else if (cardVariant === 'editable') { %>
+        <%- include('../partials/item-editable-card', { item, categories }) %>
+      <% } else { %>
+        <%- include('../partials/item-readonly-card', { item, canRemove }) %>
+      <% } %>
+    <% }) %>
+  </main>
+</body>
+</html>

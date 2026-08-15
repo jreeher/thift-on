@@ -1,0 +1,21 @@
+<section class="review-card">
+  <div class="review-card-photo">
+    <% if (item.photo_url) { %>
+      <img src="<%= item.photo_url %>" alt="Item photo">
+    <% } else { %>
+      <div class="no-photo">No photo</div>
+    <% } %>
+  </div>
+  <div class="review-card-form">
+    <p><strong><%= item.title || 'Untitled' %></strong></p>
+    <p><%= (item.category || '').replace('_', ' ') %></p>
+    <p>$<%= item.price_current_cents != null ? (item.price_current_cents / 100).toFixed(2) : '—' %></p>
+    <p>Bin #<%= item.bin_number || '—' %></p>
+    <% if (canRemove) { %>
+      <form method="POST" action="/admin/inventory/<%= item.id %>/remove">
+        <input type="hidden" name="status" value="<%= item.status %>">
+        <button type="submit" class="secondary-btn">Remove</button>
+      </form>
+    <% } %>
+  </div>
+</section>

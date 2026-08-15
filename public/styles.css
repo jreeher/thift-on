@@ -146,6 +146,75 @@ body {
   border-color: var(--shop-accent);
 }
 
+.admin-menu-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--shop-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  color: var(--shop-ink);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 1rem;
+  margin-left: 1.5rem;
+}
+
+.admin-view-store-link {
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  color: var(--shop-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.admin-view-store-link:hover {
+  color: var(--shop-ink);
+  background: var(--shop-bg);
+}
+
+@media (max-width: 860px) {
+  .admin-site-header {
+    flex-wrap: wrap;
+  }
+
+  .admin-menu-toggle {
+    display: inline-flex;
+  }
+
+  .admin-menu {
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    margin: 1rem 0 0;
+    gap: 1rem;
+  }
+
+  .admin-menu.open {
+    display: flex;
+  }
+
+  .admin-nav {
+    flex-direction: column;
+  }
+
+  .admin-nav a,
+  .admin-view-store-link {
+    text-align: center;
+  }
+}
+
 .error {
   background: #fdecea;
   border: 1px solid #f5c2bc;
@@ -244,6 +313,15 @@ body {
 .review-card-form button:hover {
   background: var(--shop-accent-dark);
   transform: translateY(-1px);
+}
+
+.review-card-form form + form {
+  margin-top: 0.5rem;
+}
+
+.review-card-form p {
+  margin: 0 0 0.5rem;
+  color: var(--shop-ink);
 }
 
 .admin-hint {
@@ -1080,6 +1158,29 @@ body {
 .checkout-btn:hover {
   background: var(--shop-accent-dark);
   transform: translateY(-1px);
+}
+
+.site-footer {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0 3rem;
+}
+
+.footer-admin-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: var(--shop-border);
+  text-decoration: none;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.footer-admin-link:hover {
+  color: var(--shop-muted);
+  background: var(--shop-surface);
 }
 
 @media (max-width: 640px) {
