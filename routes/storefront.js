@@ -236,12 +236,15 @@ router.post(
     // Store credit, if the shopper checked a balance and chose to apply some. Re-derived
     // from scratch here — nothing from the form is trusted past this point, the same way
     // price_current_cents (not a client-supplied price) is what Stripe actually charges.
+    // Gated by the same rate limiter as the read-only balance check on /cart — this path
+    // doesn't just leak a balance, it can actually spend it, so it needs at least the same
+    // protection against being scripted to guess phone numbers.
     let donorId = null;
     let creditCentsToApply = 0;
-    const donorPhone = (req.body.donor_phone || '').replace(/\D/g, '');
+    const donorPhone = String(req.body.donor_phone || '').replace(/\D/g, '');
     const requestedCreditCents = req.body.credit_dollars ? Math.round(Number(req.body.credit_dollars) * 100) : 0;
 
-    if (donorPhone && requestedCreditCents > 0) {
+    if (donorPhone && requestedCreditCents > 0 && !isCreditLookupRateLimited(req.ip)) {
       const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [donorPhone]);
       if (donorRows.length > 0) {
         donorId = donorRows[0].id;

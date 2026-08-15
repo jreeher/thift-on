@@ -27,6 +27,15 @@
       </ul>
     <% } %>
 
+    <% if (order.credit_applied_cents > 0) { %>
+      <p class="success-banner">
+        $<%= (order.credit_applied_cents / 100).toFixed(2) %> in store credit was applied to this order.
+        <% if (order.subtotal_cents > order.credit_applied_cents) { %>
+          The remaining $<%= ((order.subtotal_cents - order.credit_applied_cents) / 100).toFixed(2) %> was charged to your card.
+        <% } %>
+      </p>
+    <% } %>
+
     <a href="/">&larr; Back to browse</a>
   </main>
 
