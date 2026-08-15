@@ -7,41 +7,47 @@
     <% } %>
     <p class="ai-confidence">AI confidence: <%= item.ai_confidence || 'n/a' %></p>
   </div>
-  <form class="review-card-form" method="POST" action="/admin/review/<%= item.id %>/approve">
-    <label>
-      Title
-      <input type="text" name="title" maxlength="60" value="<%= item.title || '' %>">
-    </label>
-    <label>
-      Category
-      <select name="category">
-        <% categories.forEach((c) => { %>
-          <option value="<%= c %>" <%= item.category === c ? 'selected' : '' %>><%= c %></option>
-        <% }) %>
-      </select>
-    </label>
-    <label>
-      Description
-      <textarea name="description" rows="3"><%= item.description || '' %></textarea>
-    </label>
-    <label>
-      Condition notes
-      <textarea name="condition_notes" rows="2"><%= item.condition_notes || '' %></textarea>
-    </label>
-    <label>
-      Price ($)
-      <input
-        type="number"
-        name="price_dollars"
-        min="0.01"
-        step="0.01"
-        value="<%= item.price_original_cents ? (item.price_original_cents / 100).toFixed(2) : '' %>"
-      >
-    </label>
-    <label>
-      Bin number
-      <input type="number" name="bin_number" min="1" value="<%= item.bin_number || '' %>">
-    </label>
-    <button type="submit">Approve &amp; Publish</button>
-  </form>
+  <div class="review-card-form">
+    <form method="POST" action="/admin/review/<%= item.id %>/approve">
+      <label>
+        Title
+        <input type="text" name="title" maxlength="60" value="<%= item.title || '' %>">
+      </label>
+      <label>
+        Category
+        <select name="category">
+          <% categories.forEach((c) => { %>
+            <option value="<%= c %>" <%= item.category === c ? 'selected' : '' %>><%= c %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>
+        Description
+        <textarea name="description" rows="3"><%= item.description || '' %></textarea>
+      </label>
+      <label>
+        Condition notes
+        <textarea name="condition_notes" rows="2"><%= item.condition_notes || '' %></textarea>
+      </label>
+      <label>
+        Price ($)
+        <input
+          type="number"
+          name="price_dollars"
+          min="0.01"
+          step="0.01"
+          value="<%= item.price_original_cents ? (item.price_original_cents / 100).toFixed(2) : '' %>"
+        >
+      </label>
+      <label>
+        Bin number
+        <input type="number" name="bin_number" min="1" value="<%= item.bin_number || '' %>">
+      </label>
+      <button type="submit">Approve &amp; Publish</button>
+    </form>
+    <form method="POST" action="/admin/inventory/<%= item.id %>/remove">
+      <input type="hidden" name="status" value="draft">
+      <button type="submit" class="secondary-btn">Delete</button>
+    </form>
+  </div>
 </section>
