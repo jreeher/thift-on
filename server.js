@@ -17,6 +17,10 @@ const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+// Railway terminates TLS and proxies every request — without this, req.ip would be the
+// proxy's own address for every visitor, which breaks any per-IP logic (e.g. the store
+// credit lookup rate limit in routes/storefront.js).
+app.set('trust proxy', true);
 
 app.use(cookieParser(process.env.SESSION_SECRET));
 app.use(express.static(path.join(__dirname, 'public')));

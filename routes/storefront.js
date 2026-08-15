@@ -11,6 +11,28 @@ function asyncHandler(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 }
 
+// The store credit lookup reveals whether a phone number belongs to a registered donor
+// and their exact balance — worth a light rate limit so it can't be scripted into a
+// phone-number enumeration tool. A single Railway instance is all this app runs on, so a
+// per-process in-memory Map is enough; no shared store needed. Keyed by IP, a fixed
+// window that lazily resets itself on the next request after it expires.
+const CREDIT_LOOKUP_LIMIT = 10;
+const CREDIT_LOOKUP_WINDOW_MS = 60 * 1000;
+const creditLookupAttempts = new Map();
+
+function isCreditLookupRateLimited(ip) {
+  const now = Date.now();
+  const entry = creditLookupAttempts.get(ip);
+
+  if (!entry || now - entry.windowStart > CREDIT_LOOKUP_WINDOW_MS) {
+    creditLookupAttempts.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+
+  entry.count += 1;
+  return entry.count > CREDIT_LOOKUP_LIMIT;
+}
+
 async function loadCartItems(cartToken) {
   const { rows: items } = await pool.query(
     `SELECT * FROM items WHERE reserved_by_cart = $1 AND status = 'reserved' ORDER BY created_at ASC`,
@@ -91,10 +113,15 @@ router.get(
     // Express parses as an array — .replace would otherwise throw on that shape.
     const donorPhone = String(req.query.donor_phone || '').replace(/\D/g, '');
     let donorBalanceCents = null;
+    let creditLookupRateLimited = false;
     if (donorPhone) {
-      const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [donorPhone]);
-      if (donorRows.length > 0) {
-        donorBalanceCents = await getBalanceCents(pool, donorRows[0].id);
+      if (isCreditLookupRateLimited(req.ip)) {
+        creditLookupRateLimited = true;
+      } else {
+        const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [donorPhone]);
+        if (donorRows.length > 0) {
+          donorBalanceCents = await getBalanceCents(pool, donorRows[0].id);
+        }
       }
     }
 
@@ -103,7 +130,8 @@ router.get(
       subtotalCents,
       error: null,
       donorPhone: donorPhone || null,
-      donorBalanceCents
+      donorBalanceCents,
+      creditLookupRateLimited
     });
   })
 );
@@ -186,7 +214,8 @@ router.post(
         subtotalCents,
         error: 'Enter a valid email to check out.',
         donorPhone: null,
-        donorBalanceCents: null
+        donorBalanceCents: null,
+        creditLookupRateLimited: false
       });
     }
 
