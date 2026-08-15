@@ -1172,15 +1172,7 @@ body {
   justify-content: center;
   width: 36px;
   height: 36px;
-  border-radius: 999px;
-  color: var(--shop-border);
   text-decoration: none;
-  transition: color 0.15s ease, background-color 0.15s ease;
-}
-
-.footer-admin-link:hover {
-  color: var(--shop-muted);
-  background: var(--shop-surface);
 }
 
 @media (max-width: 640px) {
