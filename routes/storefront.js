@@ -3,7 +3,7 @@ const pool = require('../db/pool');
 const { ALLOWED_CATEGORIES } = require('../lib/pricing');
 const { ensureCartToken } = require('../middleware/cart');
 const { createCheckoutSession } = require('../lib/stripe');
-const { getBalanceCents } = require('../lib/store-credit');
+const { getBalanceCents, completeOrderFullyWithCredit } = require('../lib/store-credit');
 
 const router = express.Router();
 
@@ -233,19 +233,69 @@ router.post(
       [req.cartToken]
     );
 
+    // Store credit, if the shopper checked a balance and chose to apply some. Re-derived
+    // from scratch here — nothing from the form is trusted past this point, the same way
+    // price_current_cents (not a client-supplied price) is what Stripe actually charges.
+    let donorId = null;
+    let creditCentsToApply = 0;
+    const donorPhone = (req.body.donor_phone || '').replace(/\D/g, '');
+    const requestedCreditCents = req.body.credit_dollars ? Math.round(Number(req.body.credit_dollars) * 100) : 0;
+
+    if (donorPhone && requestedCreditCents > 0) {
+      const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [donorPhone]);
+      if (donorRows.length > 0) {
+        donorId = donorRows[0].id;
+        const balanceCents = await getBalanceCents(pool, donorId);
+        creditCentsToApply = Math.min(requestedCreditCents, balanceCents, subtotalCents);
+      }
+    }
+
     const { rows: idRows } = await pool.query(`SELECT nextval('orders_id_seq') AS id`);
     const orderId = Number(idRows[0].id);
     const orderNumber = `TS-${orderId}`;
 
+    if (creditCentsToApply > 0 && creditCentsToApply >= subtotalCents) {
+      // Credit covers the whole order — nothing for Stripe to charge, so this completes
+      // the order directly instead of ever creating a checkout session.
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        await completeOrderFullyWithCredit(client, {
+          orderId,
+          orderNumber,
+          customerEmail: email,
+          subtotalCents,
+          items,
+          donorId,
+          creditCents: creditCentsToApply
+        });
+        await client.query('COMMIT');
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+
+      return res.redirect(`/order/success?order=${orderId}`);
+    }
+
     // Stripe session is created before the order row exists, per Section 9 — its id is
     // embedded in the session metadata so the webhook (the source of truth for payment,
-    // never this browser redirect) can find the order later.
-    const session = await createCheckoutSession({ orderId, items, customerEmail: email });
+    // never this browser redirect) can find the order later. The ledger isn't debited
+    // yet — only at payment confirmation (see routes/webhooks.js) — so an abandoned
+    // checkout never wrongly consumes a donor's credit.
+    const session = await createCheckoutSession({
+      orderId,
+      items,
+      customerEmail: email,
+      creditCentsToApply
+    });
 
     await pool.query(
-      `INSERT INTO orders (id, order_number, customer_email, subtotal_cents, stripe_session_id, status)
-       VALUES ($1, $2, $3, $4, $5, 'pending')`,
-      [orderId, orderNumber, email, subtotalCents, session.id]
+      `INSERT INTO orders (id, order_number, customer_email, subtotal_cents, stripe_session_id, status, credit_donor_id, credit_applied_cents)
+       VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)`,
+      [orderId, orderNumber, email, subtotalCents, session.id, donorId, creditCentsToApply]
     );
 
     res.redirect(303, session.url);

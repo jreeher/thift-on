@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../db/pool');
 const { getClient } = require('../lib/stripe');
 const { transitionItem } = require('../db/transitions');
+const { redeemCredit } = require('../lib/store-credit');
 
 const router = express.Router();
 
@@ -71,6 +72,14 @@ router.post(
         // An item must never be sold twice — this conditional transition is the only
         // path from reserved to sold_pending_pull in the whole app (Section 2, 6).
         await transitionItem(client, itemId, 'reserved', 'sold_pending_pull', { order_id: orderId });
+      }
+
+      // Credit was only noted on the order at checkout time — it's actually debited now,
+      // at the same moment payment is confirmed, so an abandoned checkout never wrongly
+      // consumes a donor's balance.
+      const order = orderRows[0];
+      if (order.credit_donor_id && order.credit_applied_cents > 0) {
+        await redeemCredit(client, order.credit_donor_id, order.credit_applied_cents, orderId);
       }
 
       await client.query('COMMIT');
