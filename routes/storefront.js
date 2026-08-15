@@ -87,7 +87,9 @@ router.get(
 
     // A pure read — checking a balance never touches the ledger. The actual debit only
     // ever happens at payment confirmation (see the /checkout route and the webhook).
-    const donorPhone = (req.query.donor_phone || '').replace(/\D/g, '');
+    // String(...) guards against a repeated ?donor_phone=&donor_phone= query param, which
+    // Express parses as an array — .replace would otherwise throw on that shape.
+    const donorPhone = String(req.query.donor_phone || '').replace(/\D/g, '');
     let donorBalanceCents = null;
     if (donorPhone) {
       const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [donorPhone]);
@@ -179,7 +181,13 @@ router.post(
 
     if (!email || !email.includes('@')) {
       const { items, subtotalCents } = await loadCartItems(req.cartToken);
-      return res.render('storefront/cart', { items, subtotalCents, error: 'Enter a valid email to check out.' });
+      return res.render('storefront/cart', {
+        items,
+        subtotalCents,
+        error: 'Enter a valid email to check out.',
+        donorPhone: null,
+        donorBalanceCents: null
+      });
     }
 
     const { items, subtotalCents } = await loadCartItems(req.cartToken);

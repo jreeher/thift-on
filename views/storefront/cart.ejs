@@ -51,8 +51,8 @@
         <button type="submit" class="secondary-btn">Check</button>
       </form>
 
-      <% if (donorPhone && donorBalanceCents === null) { %>
-        <p class="admin-hint">No store credit found for that number.</p>
+      <% if (donorPhone && !(donorBalanceCents > 0)) { %>
+        <p class="admin-hint">No store credit available for that number.</p>
       <% } else if (donorBalanceCents > 0) { %>
         <p class="success-banner">You have $<%= (donorBalanceCents / 100).toFixed(2) %> in store credit available.</p>
       <% } %>
