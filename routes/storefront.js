@@ -16,7 +16,7 @@ function asyncHandler(fn) {
 // phone-number enumeration tool. A single Railway instance is all this app runs on, so a
 // per-process in-memory Map is enough; no shared store needed. Keyed by IP, a fixed
 // window that lazily resets itself on the next request after it expires.
-const CREDIT_LOOKUP_LIMIT = 10;
+const CREDIT_LOOKUP_LIMIT = 3;
 const CREDIT_LOOKUP_WINDOW_MS = 60 * 1000;
 const creditLookupAttempts = new Map();
 
