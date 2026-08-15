@@ -24,7 +24,9 @@
       <section class="order-card">
         <div class="order-card-header">
           <strong class="order-number"><%= order.orderNumber %></strong>
-          <span class="order-customer"><%= order.customerName || order.customerEmail %></span>
+          <span class="order-customer">
+            <%= order.customerName || order.customerEmail %><% if (order.customerPhone) { %> &middot; <%= order.customerPhone %><% } %>
+          </span>
         </div>
 
         <% order.items.forEach((item) => { %>

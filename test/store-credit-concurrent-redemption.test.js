@@ -62,7 +62,8 @@ async function attemptCompletion(ctx, orderId) {
     await completeOrderFullyWithCredit(client, {
       orderId,
       orderNumber: `TEST-CONCURRENT-${orderId}`,
-      customerEmail: 'test@example.com',
+      customerName: 'Test',
+      customerPhone: '5555550399',
       subtotalCents: 1000,
       items: [{ id: ctx.itemId }],
       donorId: ctx.donorId,

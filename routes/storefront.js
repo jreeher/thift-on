@@ -205,14 +205,15 @@ router.post(
 router.post(
   '/checkout',
   asyncHandler(async (req, res) => {
-    const email = (req.body.email || '').trim();
+    const firstName = (req.body.first_name || '').trim();
+    const customerPhone = String(req.body.phone || '').replace(/\D/g, '');
 
-    if (!email || !email.includes('@')) {
+    if (!firstName || customerPhone.length < 7) {
       const { items, subtotalCents } = await loadCartItems(req.cartToken);
       return res.render('storefront/cart', {
         items,
         subtotalCents,
-        error: 'Enter a valid email to check out.',
+        error: 'Enter your first name and a valid phone number to check out.',
         donorPhone: null,
         donorBalanceCents: null,
         creditLookupRateLimited: false
@@ -280,7 +281,8 @@ router.post(
         await completeOrderFullyWithCredit(client, {
           orderId,
           orderNumber,
-          customerEmail: email,
+          customerName: firstName,
+          customerPhone,
           subtotalCents,
           items,
           donorId,
@@ -305,14 +307,13 @@ router.post(
     const session = await createCheckoutSession({
       orderId,
       items,
-      customerEmail: email,
       creditCentsToApply
     });
 
     await pool.query(
-      `INSERT INTO orders (id, order_number, customer_email, subtotal_cents, stripe_session_id, status, credit_donor_id, credit_applied_cents)
-       VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)`,
-      [orderId, orderNumber, email, subtotalCents, session.id, donorId, creditCentsToApply]
+      `INSERT INTO orders (id, order_number, customer_name, customer_phone, subtotal_cents, stripe_session_id, status, credit_donor_id, credit_applied_cents)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8)`,
+      [orderId, orderNumber, firstName, customerPhone, subtotalCents, session.id, donorId, creditCentsToApply]
     );
 
     res.redirect(303, session.url);

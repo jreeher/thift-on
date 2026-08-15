@@ -79,8 +79,12 @@
           </label>
         <% } %>
         <label>
-          Email (for your receipt and pickup confirmation)
-          <input type="email" name="email" required placeholder="you@example.com">
+          First name
+          <input type="text" name="first_name" required maxlength="60" placeholder="Jane">
+        </label>
+        <label>
+          Phone number (for pickup confirmation)
+          <input type="tel" name="phone" required placeholder="(555) 555-5555">
         </label>
         <button type="submit" class="checkout-btn">Checkout</button>
       </form>

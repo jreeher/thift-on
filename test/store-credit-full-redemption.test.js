@@ -63,7 +63,8 @@ async function run() {
     await completeOrderFullyWithCredit(client, {
       orderId,
       orderNumber: `TEST-${orderId}`,
-      customerEmail: 'test@example.com',
+      customerName: 'Test',
+      customerPhone: '5555550299',
       subtotalCents: 1000,
       items: [{ id: ctx.itemId }],
       donorId: ctx.donorId,
