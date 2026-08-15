@@ -3,6 +3,7 @@ const pool = require('../db/pool');
 const { ALLOWED_CATEGORIES } = require('../lib/pricing');
 const { ensureCartToken } = require('../middleware/cart');
 const { createCheckoutSession } = require('../lib/stripe');
+const { getBalanceCents } = require('../lib/store-credit');
 
 const router = express.Router();
 
@@ -83,7 +84,25 @@ router.get(
   '/cart',
   asyncHandler(async (req, res) => {
     const { items, subtotalCents } = await loadCartItems(req.cartToken);
-    res.render('storefront/cart', { items, subtotalCents, error: null });
+
+    // A pure read — checking a balance never touches the ledger. The actual debit only
+    // ever happens at payment confirmation (see the /checkout route and the webhook).
+    const donorPhone = (req.query.donor_phone || '').replace(/\D/g, '');
+    let donorBalanceCents = null;
+    if (donorPhone) {
+      const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [donorPhone]);
+      if (donorRows.length > 0) {
+        donorBalanceCents = await getBalanceCents(pool, donorRows[0].id);
+      }
+    }
+
+    res.render('storefront/cart', {
+      items,
+      subtotalCents,
+      error: null,
+      donorPhone: donorPhone || null,
+      donorBalanceCents
+    });
   })
 );
 

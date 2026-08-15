@@ -43,11 +43,39 @@
         <span class="cart-subtotal">Subtotal: $<%= (subtotalCents / 100).toFixed(2) %></span>
       </div>
 
+      <form method="GET" action="/cart" class="bin-create-form">
+        <label>
+          Have store credit? Enter phone number
+          <input type="tel" name="donor_phone" value="<%= donorPhone || '' %>" placeholder="(555) 555-5555">
+        </label>
+        <button type="submit" class="secondary-btn">Check</button>
+      </form>
+
+      <% if (donorPhone && donorBalanceCents === null) { %>
+        <p class="admin-hint">No store credit found for that number.</p>
+      <% } else if (donorBalanceCents > 0) { %>
+        <p class="success-banner">You have $<%= (donorBalanceCents / 100).toFixed(2) %> in store credit available.</p>
+      <% } %>
+
       <% if (error) { %>
         <p class="error"><%= error %></p>
       <% } %>
 
       <form method="POST" action="/checkout" class="checkout-form">
+        <% if (donorBalanceCents > 0) { %>
+          <input type="hidden" name="donor_phone" value="<%= donorPhone %>">
+          <label>
+            Apply credit ($)
+            <input
+              type="number"
+              name="credit_dollars"
+              min="0"
+              step="0.01"
+              max="<%= (Math.min(donorBalanceCents, subtotalCents) / 100).toFixed(2) %>"
+              value="<%= (Math.min(donorBalanceCents, subtotalCents) / 100).toFixed(2) %>"
+            >
+          </label>
+        <% } %>
         <label>
           Email (for your receipt and pickup confirmation)
           <input type="email" name="email" required placeholder="you@example.com">
