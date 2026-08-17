@@ -42,6 +42,25 @@ async function loadCartItems(cartToken) {
   return { items, subtotalCents };
 }
 
+// Checkout authorizes the card but doesn't capture until pickup is confirmed (Section:
+// manual capture). Card issuers release an uncaptured authorization after about 7 days,
+// so the pickup day a customer can choose is capped a little under that — picking a day
+// past the hold's expiry would guarantee the eventual capture fails.
+const MAX_PICKUP_DAYS_AHEAD = 6;
+
+function pickupDateBounds() {
+  const toISODate = (date) => date.toISOString().slice(0, 10);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const max = new Date(today);
+  max.setDate(max.getDate() + MAX_PICKUP_DAYS_AHEAD);
+  return { min: toISODate(today), max: toISODate(max) };
+}
+
+function isValidPickupDate(value, bounds) {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && value >= bounds.min && value <= bounds.max;
+}
+
 router.use(ensureCartToken);
 router.use(express.urlencoded({ extended: false }));
 
@@ -131,7 +150,8 @@ router.get(
       error: null,
       donorPhone: donorPhone || null,
       donorBalanceCents,
-      creditLookupRateLimited
+      creditLookupRateLimited,
+      pickupDateBounds: pickupDateBounds()
     });
   })
 );
@@ -207,16 +227,19 @@ router.post(
   asyncHandler(async (req, res) => {
     const firstName = (req.body.first_name || '').trim();
     const customerPhone = String(req.body.phone || '').replace(/\D/g, '');
+    const bounds = pickupDateBounds();
+    const pickupDate = req.body.pickup_date || '';
 
-    if (!firstName || customerPhone.length < 7) {
+    if (!firstName || customerPhone.length < 7 || !isValidPickupDate(pickupDate, bounds)) {
       const { items, subtotalCents } = await loadCartItems(req.cartToken);
       return res.render('storefront/cart', {
         items,
         subtotalCents,
-        error: 'Enter your first name and a valid phone number to check out.',
+        error: 'Enter your first name, a valid phone number, and a pickup day to check out.',
         donorPhone: null,
         donorBalanceCents: null,
-        creditLookupRateLimited: false
+        creditLookupRateLimited: false,
+        pickupDateBounds: bounds
       });
     }
 
@@ -256,7 +279,8 @@ router.post(
           error: 'Too many attempts — please wait a moment and try checkout again.',
           donorPhone,
           donorBalanceCents: null,
-          creditLookupRateLimited: false
+          creditLookupRateLimited: false,
+          pickupDateBounds: bounds
         });
       }
 
@@ -286,7 +310,8 @@ router.post(
           subtotalCents,
           items,
           donorId,
-          creditCents: creditCentsToApply
+          creditCents: creditCentsToApply,
+          pickupDate
         });
         await client.query('COMMIT');
       } catch (err) {
@@ -311,9 +336,9 @@ router.post(
     });
 
     await pool.query(
-      `INSERT INTO orders (id, order_number, customer_name, customer_phone, subtotal_cents, stripe_session_id, status, credit_donor_id, credit_applied_cents)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8)`,
-      [orderId, orderNumber, firstName, customerPhone, subtotalCents, session.id, donorId, creditCentsToApply]
+      `INSERT INTO orders (id, order_number, customer_name, customer_phone, subtotal_cents, stripe_session_id, status, credit_donor_id, credit_applied_cents, pickup_date)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8, $9)`,
+      [orderId, orderNumber, firstName, customerPhone, subtotalCents, session.id, donorId, creditCentsToApply, pickupDate]
     );
 
     res.redirect(303, session.url);

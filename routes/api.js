@@ -3,7 +3,7 @@ const multer = require('multer');
 const pool = require('../db/pool');
 const { uploadPhoto } = require('../lib/storage');
 const { analyzeItemPhoto } = require('../lib/ai');
-const { getFulfillmentQueue, markItemPulled, markOrderPickedUp } = require('../lib/fulfillment');
+const { getFulfillmentQueue, markItemPulled, declineItem, markOrderPickedUp } = require('../lib/fulfillment');
 const { TransitionConflictError } = require('../db/transitions');
 
 const router = express.Router();
@@ -91,6 +91,21 @@ router.post(
     } catch (err) {
       // Only an expected state race is a 409 — anything else (bad transition, DB down)
       // is a real failure and should surface as a 500, not be mistaken for a conflict.
+      if (err instanceof TransitionConflictError) {
+        return res.status(409).json({ error: err.message });
+      }
+      throw err;
+    }
+  })
+);
+
+router.post(
+  '/items/:id/decline',
+  asyncHandler(async (req, res) => {
+    try {
+      await declineItem(Number(req.params.id));
+      res.json({ ok: true });
+    } catch (err) {
       if (err instanceof TransitionConflictError) {
         return res.status(409).json({ error: err.message });
       }

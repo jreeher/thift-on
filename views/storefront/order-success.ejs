@@ -13,8 +13,16 @@
     <h1>Thanks!</h1>
     <p>Order <strong><%= order.order_number %></strong></p>
 
-    <% if (order.status === 'paid' || order.status === 'ready_for_pickup' || order.status === 'completed') { %>
-      <p>Your payment is confirmed. We'll have your order ready for pickup soon.</p>
+    <% if (order.status === 'completed') { %>
+      <p>
+        Picked up! You were charged $<%= (order.captured_amount_cents / 100).toFixed(2) %>.
+      </p>
+    <% } else if (order.status === 'paid' || order.status === 'ready_for_pickup') { %>
+      <p>
+        Your order is confirmed<% if (order.pickup_date) { %> for pickup on <%= new Date(order.pickup_date).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric' }) %><% } %>.
+        Your card is authorized but won't be charged until you pick everything up &mdash;
+        you won't pay for anything you decide not to take.
+      </p>
     <% } else { %>
       <p>We're confirming your payment now &mdash; this usually only takes a few seconds. Feel free to refresh this page.</p>
     <% } %>
@@ -30,8 +38,9 @@
     <% if (order.credit_applied_cents > 0) { %>
       <p class="success-banner">
         $<%= (order.credit_applied_cents / 100).toFixed(2) %> in store credit was applied to this order.
-        <% if (order.subtotal_cents > order.credit_applied_cents) { %>
-          The remaining $<%= ((order.subtotal_cents - order.credit_applied_cents) / 100).toFixed(2) %> was charged to your card.
+        <% if (order.status !== 'completed' && order.subtotal_cents > order.credit_applied_cents) { %>
+          The remaining $<%= ((order.subtotal_cents - order.credit_applied_cents) / 100).toFixed(2) %>
+          will be charged to your card at pickup (less anything you decide not to take).
         <% } %>
       </p>
     <% } %>

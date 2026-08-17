@@ -26,6 +26,9 @@
           <strong class="order-number"><%= order.orderNumber %></strong>
           <span class="order-customer">
             <%= order.customerName || order.customerEmail %><% if (order.customerPhone) { %> &middot; <%= order.customerPhone %><% } %>
+            <% if (order.pickupDate) { %>
+              &middot; pickup <%= new Date(order.pickupDate).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' }) %>
+            <% } %>
           </span>
         </div>
 
@@ -48,6 +51,9 @@
               </form>
             <% } else { %>
               <span class="pulled-badge">Pulled &#10003;</span>
+              <form method="POST" action="/staff/items/<%= item.id %>/decline" class="decline-form">
+                <button type="submit" class="decline-btn">Declined</button>
+              </form>
             <% } %>
           </div>
         <% }) %>

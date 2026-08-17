@@ -1317,6 +1317,28 @@ body {
   font-size: 0.9rem;
 }
 
+.decline-form {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.decline-btn {
+  padding: 0.45rem 0.8rem;
+  background: transparent;
+  color: var(--shop-muted);
+  border: 1px solid var(--shop-border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.decline-btn:hover {
+  color: #b00020;
+  border-color: #f0c2c6;
+}
+
 .pickup-btn {
   width: 100%;
   margin-top: 1rem;

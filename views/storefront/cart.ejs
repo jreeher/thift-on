@@ -86,6 +86,20 @@
           Phone number (for pickup confirmation)
           <input type="tel" name="phone" required placeholder="(555) 555-5555">
         </label>
+        <label>
+          Pickup day
+          <input
+            type="date"
+            name="pickup_date"
+            required
+            min="<%= pickupDateBounds.min %>"
+            max="<%= pickupDateBounds.max %>"
+          >
+        </label>
+        <p class="admin-hint">
+          Your card is authorized now but not charged until you pick up your order — you
+          won't be charged for anything you decide not to take.
+        </p>
         <button type="submit" class="checkout-btn">Checkout</button>
       </form>
     <% } %>
