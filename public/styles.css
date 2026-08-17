@@ -269,6 +269,12 @@ body {
   gap: 0.85rem;
 }
 
+.review-card-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
 .review-card-form label {
   display: flex;
   flex-direction: column;
@@ -543,6 +549,24 @@ body {
   color: var(--shop-accent);
 }
 
+.bin-actions a {
+  display: inline-block;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--shop-ink);
+  border: 1px solid var(--shop-border);
+  border-radius: 8px;
+  text-decoration: none;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.bin-actions a:hover {
+  border-color: var(--shop-accent);
+  color: var(--shop-accent);
+}
+
 .bin-create-form {
   display: flex;
   gap: 1rem;
@@ -686,13 +710,10 @@ body {
 }
 
 .site-title-sub {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-size: 1.5rem;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
   color: var(--shop-accent);
-  margin-top: 0.15rem;
 }
 
 .site-logo {
@@ -1356,6 +1377,28 @@ body {
 .decline-btn:hover {
   color: #b00020;
   border-color: #f0c2c6;
+}
+
+.bin-number-link {
+  color: var(--shop-ink);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.bin-number-link:hover {
+  color: var(--shop-accent);
+  text-decoration: underline;
+}
+
+.ledger-credit {
+  color: #1a7a3a;
+  font-weight: 600;
+}
+
+.ledger-debit {
+  color: #b00020;
+  font-weight: 600;
 }
 
 .pickup-btn {

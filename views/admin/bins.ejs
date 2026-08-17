@@ -48,6 +48,8 @@
               <td><%= bin.occupied_count %></td>
               <td><%= bin.peak_item_count %></td>
               <td class="bin-actions">
+                <a href="/admin/bins/<%= bin.bin_number %>/items">Open</a>
+                <a href="/admin/bins/<%= bin.bin_number %>/merge">Merge</a>
                 <% if (bin.status === 'active' && bin.consolidationSuggested) { %>
                   <form method="POST" action="/admin/bins/<%= bin.id %>/flag-consolidation">
                     <button type="submit">Flag for Consolidation</button>

@@ -8,7 +8,7 @@
   </div>
   <div class="review-card-form">
     <p><strong><%= item.title || 'Untitled' %></strong></p>
-    <p><%= (item.category || '').replace('_', ' ') %></p>
+    <p><%= (item.category || '').replace('_', ' ') %> &middot; <%= item.status %></p>
     <p>$<%= item.price_current_cents != null ? (item.price_current_cents / 100).toFixed(2) : '—' %></p>
     <p>Bin #<%= item.bin_number || '—' %></p>
     <% if (canRemove) { %>

@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Donations</title>
+  <title>Donors</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <%- include('../partials/admin-header', { active: 'donations' }) %>
 
   <main class="admin-page">
-    <h1>Donations</h1>
+    <h1>Donors</h1>
 
     <% if (error) { %>
       <p class="error"><%= error %></p>
@@ -19,13 +19,22 @@
     <% if (registeredDonor) { %>
       <p class="success-banner">
         Donor ID <strong>#<%= registeredDonor.id %></strong> &mdash; <%= registeredDonor.phone_number %>
+        &mdash; <a href="/admin/donations/<%= registeredDonor.id %>">View history</a>
       </p>
     <% } %>
 
+    <form method="GET" action="/admin/donations" class="bin-create-form">
+      <label>
+        Search by phone or donor ID
+        <input type="text" name="q" value="<%= searchQuery || '' %>" placeholder="(555) 123-4567 or 42">
+      </label>
+      <button type="submit" class="secondary-btn">Search</button>
+    </form>
+
     <form method="POST" action="/admin/donations" class="bin-create-form">
       <label>
-        Donor phone number
-        <input type="tel" name="phone_number" required autofocus placeholder="(555) 123-4567">
+        Register a new donor &mdash; phone number
+        <input type="tel" name="phone_number" required placeholder="(555) 123-4567">
       </label>
       <button type="submit">Register Donor</button>
     </form>
@@ -34,6 +43,38 @@
       Entering a phone number that's already registered returns their existing donor ID
       instead of creating a new one.
     </p>
+
+    <h2>Recent Donors</h2>
+    <% if (recentDonors.length === 0) { %>
+      <p class="empty-state">No donors registered yet.</p>
+    <% } else { %>
+      <div class="bins-table-wrap">
+        <table class="bins-table">
+          <thead>
+            <tr>
+              <th>Donor</th>
+              <th>Phone</th>
+              <th>Registered</th>
+              <th>Items Donated</th>
+              <th>Store Credit</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% recentDonors.forEach((donor) => { %>
+              <tr>
+                <td>#<%= donor.id %></td>
+                <td><%= donor.phone_number %></td>
+                <td><%= donor.created_at.toLocaleDateString() %></td>
+                <td><%= donor.items_donated_count %></td>
+                <td>$<%= (donor.balance_cents / 100).toFixed(2) %></td>
+                <td><a href="/admin/donations/<%= donor.id %>">View history</a></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
   </main>
 </body>
 </html>

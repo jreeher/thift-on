@@ -16,36 +16,9 @@
     <% if (items.length === 0) { %>
       <p class="empty-state">This bin is empty.</p>
     <% } else { %>
-      <div class="bins-table-wrap">
-        <table class="bins-table">
-          <thead>
-            <tr>
-              <th></th>
-              <th>Title</th>
-              <th>Category</th>
-              <th>Status</th>
-              <th>Price</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% items.forEach((item) => { %>
-              <tr>
-                <td>
-                  <% if (item.photo_url) { %>
-                    <img src="<%= item.photo_url %>" alt="" class="bin-item-thumb">
-                  <% } else { %>
-                    <div class="bin-item-thumb bin-item-thumb-empty"></div>
-                  <% } %>
-                </td>
-                <td><%= item.title || '(untitled draft)' %></td>
-                <td><%= (item.category || '—').replace('_', ' ') %></td>
-                <td><%= item.status %></td>
-                <td><%= item.price_current_cents != null ? '$' + (item.price_current_cents / 100).toFixed(2) : '—' %></td>
-              </tr>
-            <% }) %>
-          </tbody>
-        </table>
-      </div>
+      <% items.forEach((item) => { %>
+        <%- include('../partials/item-readonly-card', { item, canRemove: false }) %>
+      <% }) %>
     <% } %>
   </main>
 </body>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merge Bin #<%= binNumber %></title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/admin-header', { active: 'bins' }) %>
+
+  <main class="admin-page">
+    <a class="back-link" href="/admin/bins">&larr; Back to Bins</a>
+    <h1>Merge Bin #<%= binNumber %></h1>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <p class="admin-hint">
+      Moves every current item in Bin #<%= binNumber %> into the bin you choose below.
+      Do this after you've physically moved the items &mdash; this only updates the
+      record to match.
+    </p>
+
+    <form method="POST" action="/admin/bins/<%= binNumber %>/merge" class="bin-create-form">
+      <label>
+        Merge into bin #
+        <input type="number" name="target_bin_number" min="1" required autofocus>
+      </label>
+      <button type="submit">Merge</button>
+    </form>
+  </main>
+</body>
+</html>

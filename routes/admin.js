@@ -17,6 +17,7 @@ const {
   getDonorsReport,
   getBinsReport
 } = require('../lib/reports');
+const { getRecentDonors, findDonorByPhone, getDonorHistory } = require('../lib/donors');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -430,6 +431,63 @@ router.get(
   })
 );
 
+router.get(
+  '/bins/:binNumber/merge',
+  asyncHandler(async (req, res) => {
+    const binNumber = Number(req.params.binNumber);
+    if (!Number.isInteger(binNumber)) {
+      return res.redirect('/admin/bins');
+    }
+    res.render('admin/bin-merge', { binNumber, error: null });
+  })
+);
+
+router.post(
+  '/bins/:binNumber/merge',
+  asyncHandler(async (req, res) => {
+    const sourceBinNumber = Number(req.params.binNumber);
+    if (!Number.isInteger(sourceBinNumber)) {
+      return res.redirect('/admin/bins');
+    }
+
+    const targetBinNumber = req.body.target_bin_number ? Number(req.body.target_bin_number) : NaN;
+
+    if (!Number.isInteger(targetBinNumber)) {
+      return res.render('admin/bin-merge', {
+        binNumber: sourceBinNumber,
+        error: 'Enter a valid bin number to merge into.'
+      });
+    }
+
+    if (targetBinNumber === sourceBinNumber) {
+      return res.render('admin/bin-merge', {
+        binNumber: sourceBinNumber,
+        error: 'Choose a different bin to merge into.'
+      });
+    }
+
+    // Any bin number works, same as opening a bin in Intake — auto-creates the row on
+    // first use.
+    await pool.query('INSERT INTO bins (bin_number) VALUES ($1) ON CONFLICT (bin_number) DO NOTHING', [
+      targetBinNumber
+    ]);
+
+    // This assumes staff have already physically moved the items — same trust placed in
+    // Inventory's own bin_number edit, just applied to everything currently in the source
+    // bin at once. A human confirmed this by submitting the form (Section 2).
+    await pool.query(
+      `UPDATE items
+          SET bin_number = $1, updated_at = NOW()
+        WHERE bin_number = $2 AND status NOT IN ('picked_up', 'expired', 'removed')`,
+      [targetBinNumber, sourceBinNumber]
+    );
+
+    await ratchetBinPeak(pool, targetBinNumber);
+
+    res.redirect('/admin/bins');
+  })
+);
+
 router.post(
   '/bins/:id/retire',
   asyncHandler(async (req, res) => {
@@ -506,7 +564,35 @@ router.get(
       const { rows } = await pool.query('SELECT * FROM donors WHERE id = $1', [registeredDonorId]);
       registeredDonor = rows[0] || null;
     }
-    res.render('admin/donations', { registeredDonor, error: null });
+
+    // Search accepts either a phone number or a short donor id, since both appear on the
+    // confirmation banner staff might have written down. A match goes straight to their
+    // history instead of just confirming they exist.
+    let searchError = null;
+    const searchQuery = (req.query.q || '').trim();
+    if (searchQuery) {
+      const digitsOnly = searchQuery.replace(/\D/g, '');
+      let donor = null;
+      if (digitsOnly.length >= 7) {
+        donor = await findDonorByPhone(digitsOnly);
+      } else if (/^\d+$/.test(searchQuery)) {
+        const { rows } = await pool.query('SELECT * FROM donors WHERE id = $1', [Number(searchQuery)]);
+        donor = rows[0] || null;
+      }
+
+      if (donor) {
+        return res.redirect(`/admin/donations/${donor.id}`);
+      }
+      searchError = `No donor found for "${searchQuery}".`;
+    }
+
+    const recentDonors = await getRecentDonors();
+    res.render('admin/donations', {
+      registeredDonor,
+      error: searchError,
+      recentDonors,
+      searchQuery
+    });
   })
 );
 
@@ -516,9 +602,12 @@ router.post(
     const normalizedPhone = (req.body.phone_number || '').replace(/\D/g, '');
 
     if (normalizedPhone.length < 7) {
+      const recentDonors = await getRecentDonors();
       return res.render('admin/donations', {
         registeredDonor: null,
-        error: 'Enter a valid phone number.'
+        error: 'Enter a valid phone number.',
+        recentDonors,
+        searchQuery: ''
       });
     }
 
@@ -533,6 +622,23 @@ router.post(
     );
 
     res.redirect(`/admin/donations?donor_id=${rows[0].id}`);
+  })
+);
+
+router.get(
+  '/donations/:id',
+  asyncHandler(async (req, res) => {
+    const donorId = Number(req.params.id);
+    if (!Number.isInteger(donorId)) {
+      return res.redirect('/admin/donations');
+    }
+
+    const history = await getDonorHistory(donorId);
+    if (!history) {
+      return res.redirect('/admin/donations');
+    }
+
+    res.render('admin/donor-detail', history);
   })
 );
 
