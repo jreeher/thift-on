@@ -28,7 +28,7 @@
       <% } else if (cardVariant === 'editable') { %>
         <%- include('../partials/item-editable-card', { item, categories }) %>
       <% } else { %>
-        <%- include('../partials/item-readonly-card', { item, canRemove }) %>
+        <%- include('../partials/item-readonly-card', { item, canRemove, statusLabels }) %>
       <% } %>
     <% }) %>
   </main>

@@ -17,7 +17,7 @@
       <p class="empty-state">This bin is empty.</p>
     <% } else { %>
       <% items.forEach((item) => { %>
-        <%- include('../partials/item-readonly-card', { item, canRemove: false }) %>
+        <%- include('../partials/item-readonly-card', { item, canRemove: false, statusLabels }) %>
       <% }) %>
     <% } %>
   </main>

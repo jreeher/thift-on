@@ -18,6 +18,7 @@ const {
   getBinsReport
 } = require('../lib/reports');
 const { getRecentDonors, findDonorByPhone, getDonorHistory } = require('../lib/donors');
+const { ITEM_STATUS_LABELS } = require('../lib/item-status');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -54,17 +55,6 @@ router.get('/', (req, res) => {
   res.render('admin/home');
 });
 
-const INVENTORY_STATUS_LABELS = {
-  draft: 'Draft',
-  active: 'Active',
-  reserved: 'Reserved',
-  sold_pending_pull: 'Sold',
-  pulled: 'Pulled',
-  picked_up: 'Picked Up',
-  expired: 'Expired',
-  removed: 'Removed'
-};
-
 // draft keeps the existing AI-draft review form; active/reserved get an editable card;
 // everything else (mid-transaction or terminal statuses) is read-only, since editing a
 // sold/historical item doesn't fit the state machine (Section 6).
@@ -85,7 +75,7 @@ router.get(
       items,
       status,
       statuses: ITEM_STATUSES,
-      statusLabels: INVENTORY_STATUS_LABELS,
+      statusLabels: ITEM_STATUS_LABELS,
       cardVariant: inventoryCardVariant(status),
       // Only expired items get a Remove button among the read-only statuses — sold/pulled/
       // picked-up items are mid-transaction or historical, and hiding removal there avoids
@@ -427,7 +417,7 @@ router.get(
       [binNumber]
     );
 
-    res.render('admin/bin-items', { binNumber, items });
+    res.render('admin/bin-items', { binNumber, items, statusLabels: ITEM_STATUS_LABELS });
   })
 );
 
@@ -638,7 +628,7 @@ router.get(
       return res.redirect('/admin/donations');
     }
 
-    res.render('admin/donor-detail', history);
+    res.render('admin/donor-detail', { ...history, statusLabels: ITEM_STATUS_LABELS });
   })
 );
 
@@ -686,6 +676,7 @@ router.get(
       rows,
       totals,
       itemStatuses: ITEM_STATUSES,
+      itemStatusLabels: ITEM_STATUS_LABELS,
       orderStatuses: ORDER_STATUSES,
       binStatuses: BIN_STATUSES,
       categories: ALLOWED_CATEGORIES,

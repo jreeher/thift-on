@@ -40,7 +40,7 @@
               <tr>
                 <td><%= item.title || '(untitled draft)' %></td>
                 <td><%= (item.category || '—').replace('_', ' ') %></td>
-                <td><%= item.status %></td>
+                <td><%= statusLabels[item.status] || item.status %></td>
                 <td><%= item.bin_number || '—' %></td>
                 <td><%= item.price_current_cents != null ? '$' + (item.price_current_cents / 100).toFixed(2) : '—' %></td>
                 <td><%= item.created_at.toLocaleDateString() %></td>

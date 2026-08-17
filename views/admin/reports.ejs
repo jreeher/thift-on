@@ -28,7 +28,7 @@
           <select name="status">
             <option value="">All</option>
             <% itemStatuses.forEach((s) => { %>
-              <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+              <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= itemStatusLabels[s] || s %></option>
             <% }) %>
           </select>
         </label>
@@ -129,7 +129,7 @@
                 <td>#<%= item.id %></td>
                 <td><%= item.title || '—' %></td>
                 <td><%= (item.category || '—').replace('_', ' ') %></td>
-                <td><%= item.status %></td>
+                <td><%= itemStatusLabels[item.status] || item.status %></td>
                 <td><%= item.bin_number || '—' %></td>
                 <td><%= item.donor_id ? ('#' + item.donor_id + ' (' + item.donor_phone + ')') : '—' %></td>
                 <td><%= item.price_original_cents != null ? '$' + (item.price_original_cents / 100).toFixed(2) : '—' %></td>
