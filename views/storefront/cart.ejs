@@ -26,7 +26,7 @@
           </div>
           <div class="cart-item-info">
             <p class="cart-item-title"><%= item.title %></p>
-            <p class="cart-item-price">$<%= (item.price_current_cents / 100).toFixed(2) %></p>
+            <p class="cart-item-price"><%- include('../partials/item-price', { item }) %></p>
             <p class="cart-item-countdown" data-reserved-until="<%= item.reserved_until.toISOString() %>">
               Reserved &mdash; expires in <span class="countdown-value">--:--</span>
             </p>

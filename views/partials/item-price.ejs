@@ -1,0 +1,8 @@
+<% if (item.price_original_cents != null && item.price_original_cents > item.price_current_cents) { %>
+  <% const pctOff = Math.round((1 - item.price_current_cents / item.price_original_cents) * 100); %>
+  <span class="price-original">$<%= (item.price_original_cents / 100).toFixed(2) %></span>
+  <span class="price-discounted">$<%= (item.price_current_cents / 100).toFixed(2) %></span>
+  <span class="discount-badge"><%= pctOff %>% off</span>
+<% } else { %>
+  $<%= (item.price_current_cents / 100).toFixed(2) %>
+<% } %>

@@ -917,6 +917,32 @@ body {
   margin: 0 1rem 1.1rem;
 }
 
+/* Sized in em so the same markup (views/partials/item-price.ejs) looks right whether
+   it's dropped into the small grid-card price, the large item-detail price, or the
+   cart line — each parent sets its own base font-size, these scale off of it. */
+.price-original {
+  font-size: 0.7em;
+  font-weight: 500;
+  color: var(--shop-muted);
+  text-decoration: line-through;
+  margin-right: 0.35em;
+}
+
+.discount-badge {
+  display: inline-block;
+  font-size: 0.55em;
+  font-weight: 700;
+  color: var(--shop-accent-dark);
+  background: var(--shop-accent-soft);
+  padding: 0.2em 0.55em;
+  border-radius: 999px;
+  margin-left: 0.5em;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
 .back-link {
   display: inline-flex;
   align-items: center;

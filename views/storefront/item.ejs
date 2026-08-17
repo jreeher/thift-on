@@ -24,7 +24,7 @@
       <div class="item-detail-info">
         <h1><%= item.title %></h1>
         <p class="item-category"><%= (item.category || '').replace('_', ' ') %></p>
-        <p class="item-price">$<%= (item.price_current_cents / 100).toFixed(2) %></p>
+        <p class="item-price"><%- include('../partials/item-price', { item }) %></p>
 
         <p class="item-description"><%= item.description %></p>
 

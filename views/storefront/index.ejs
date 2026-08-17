@@ -34,7 +34,7 @@
             <% } %>
           </div>
           <h2 class="item-card-title"><%= item.title %></h2>
-          <p class="item-card-price">$<%= (item.price_current_cents / 100).toFixed(2) %></p>
+          <p class="item-card-price"><%- include('../partials/item-price', { item }) %></p>
         </a>
       <% }) %>
     </div>
