@@ -94,7 +94,7 @@
           <select name="status">
             <option value="">All</option>
             <% binStatuses.forEach((s) => { %>
-              <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option>
+              <option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s === 'retired' ? 'Empty' : s %></option>
             <% }) %>
           </select>
         </label>
@@ -184,7 +184,7 @@
         <% } else if (section === 'bins') { %>
           <thead>
             <tr>
-              <th>Bin #</th><th>Status</th><th>Occupied</th><th>Peak</th><th>Last Consolidated</th>
+              <th>Bin #</th><th>Status</th><th>Current Items</th><th>Peak Items</th><th>Last Consolidated</th>
             </tr>
           </thead>
           <tbody>
@@ -194,7 +194,7 @@
             <% rows.forEach((bin) => { %>
               <tr>
                 <td><%= bin.bin_number %></td>
-                <td><%= bin.status %></td>
+                <td><%= bin.status === 'retired' ? 'Empty' : bin.status %></td>
                 <td><%= bin.occupied_count %></td>
                 <td><%= bin.peak_item_count %></td>
                 <td><%= bin.last_consolidated_at ? bin.last_consolidated_at.toLocaleDateString() : '—' %></td>

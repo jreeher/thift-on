@@ -666,14 +666,33 @@ body {
 .site-title {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.6rem;
   font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
-  font-size: 1.5rem;
   font-weight: 700;
-  font-optical-sizing: auto;
-  letter-spacing: -0.02em;
   color: var(--shop-ink);
   text-decoration: none;
+}
+
+.site-title-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.site-title-main {
+  font-size: 1.5rem;
+  font-optical-sizing: auto;
+  letter-spacing: -0.02em;
+}
+
+.site-title-sub {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--shop-accent);
+  margin-top: 0.15rem;
 }
 
 .site-logo {

@@ -5,6 +5,7 @@ const { uploadPhoto } = require('../lib/storage');
 const { analyzeItemPhoto } = require('../lib/ai');
 const { getFulfillmentQueue, markItemPulled, declineItem, markOrderPickedUp } = require('../lib/fulfillment');
 const { TransitionConflictError } = require('../db/transitions');
+const { ratchetBinPeak } = require('../lib/bins');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -69,6 +70,8 @@ router.post(
         fields.priceCents
       ]
     );
+
+    await ratchetBinPeak(pool, binNumber);
 
     res.status(201).json(rows[0]);
   })

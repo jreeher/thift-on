@@ -30,17 +30,17 @@
           <tr>
             <th>Bin #</th>
             <th>Status</th>
-            <th>Occupied</th>
-            <th>Peak</th>
+            <th>Current Items</th>
+            <th>Peak Items</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <% bins.forEach((bin) => { %>
             <tr>
-              <td><%= bin.bin_number %></td>
+              <td><a class="bin-number-link" href="/admin/bins/<%= bin.bin_number %>/items"><%= bin.bin_number %></a></td>
               <td>
-                <%= bin.status %>
+                <%= bin.status === 'retired' ? 'Empty' : bin.status %>
                 <% if (bin.consolidationSuggested) { %>
                   <span class="suggestion-badge">low occupancy</span>
                 <% } %>
@@ -60,7 +60,7 @@
                 <% } %>
                 <% if (bin.status !== 'retired') { %>
                   <form method="POST" action="/admin/bins/<%= bin.id %>/retire">
-                    <button type="submit">Retire</button>
+                    <button type="submit">Empty</button>
                   </form>
                 <% } %>
               </td>
@@ -69,8 +69,6 @@
         </tbody>
       </table>
     </div>
-
-    <p class="admin-hint">Bins are created automatically the first time a number is opened in Intake — there's no separate creation step.</p>
   </main>
 </body>
 </html>

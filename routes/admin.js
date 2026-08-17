@@ -4,7 +4,7 @@ const pool = require('../db/pool');
 const { requireStaffAuth } = require('../middleware/auth');
 const { transitionItem } = require('../db/transitions');
 const { ALLOWED_CATEGORIES, clampSuggestedPrice, basePriceForCategory } = require('../lib/pricing');
-const { isConsolidationCandidate } = require('../lib/bins');
+const { isConsolidationCandidate, ratchetBinPeak } = require('../lib/bins');
 const { uploadPhoto } = require('../lib/storage');
 const { analyzeItemPhoto } = require('../lib/ai');
 const {
@@ -128,6 +128,10 @@ router.post(
       [title || null, finalCategory, description || null, conditionNotes || null, binNumber, itemId]
     );
 
+    if (binNumber) {
+      await ratchetBinPeak(pool, binNumber);
+    }
+
     res.redirect(`/admin/inventory?status=${encodeURIComponent(returnStatus || 'active')}`);
   })
 );
@@ -207,6 +211,10 @@ router.post(
         [item.id, priceCents]
       );
 
+      if (binNumber) {
+        await ratchetBinPeak(client, binNumber);
+      }
+
       await client.query('COMMIT');
       res.redirect('/admin/inventory');
     } catch (err) {
@@ -259,20 +267,10 @@ router.post(
   asyncHandler(async (req, res) => {
     const openBin = req.signedCookies[INTAKE_BIN_COOKIE];
     if (openBin) {
-      const binNumber = Number(openBin);
-      // Snapshot how full this bin got during the session that's ending, so the
-      // consolidation suggestion (lib/bins.js) has a self-computed baseline instead of a
-      // manually-typed capacity. Only ever ratchets up (GREATEST), never down.
-      const { rows } = await pool.query(
-        `SELECT COUNT(*)::int AS occupied_count
-           FROM items
-          WHERE bin_number = $1 AND status NOT IN ('picked_up', 'expired', 'removed')`,
-        [binNumber]
-      );
-      await pool.query('UPDATE bins SET peak_item_count = GREATEST(peak_item_count, $1) WHERE bin_number = $2', [
-        rows[0].occupied_count,
-        binNumber
-      ]);
+      // This is now just a belt-and-suspenders snapshot — every actual bin_number
+      // assignment (intake, approval, editing) already ratchets the peak itself, so the
+      // bin stays correct even if this button never gets tapped.
+      await ratchetBinPeak(pool, Number(openBin));
     }
 
     res.clearCookie(INTAKE_BIN_COOKIE);
@@ -369,6 +367,8 @@ router.post(
       ]
     );
 
+    await ratchetBinPeak(pool, binNumber);
+
     res.redirect(`/admin/intake/${rows[0].id}`);
   })
 );
@@ -405,13 +405,62 @@ router.get(
       consolidationSuggested: isConsolidationCandidate(bin)
     }));
 
-    res.render('admin/bins', { bins: binsWithSuggestions, error: null });
+    res.render('admin/bins', { bins: binsWithSuggestions, error: req.query.error || null });
+  })
+);
+
+router.get(
+  '/bins/:binNumber/items',
+  asyncHandler(async (req, res) => {
+    const binNumber = Number(req.params.binNumber);
+    if (!Number.isInteger(binNumber)) {
+      return res.redirect('/admin/bins');
+    }
+
+    // What's physically sitting in the bin right now — same definition of "occupied" used
+    // everywhere else (bins.ejs, lib/bins.js), so this always matches the Occupied count.
+    const { rows: items } = await pool.query(
+      `SELECT * FROM items
+        WHERE bin_number = $1 AND status NOT IN ('picked_up', 'expired', 'removed')
+        ORDER BY created_at ASC`,
+      [binNumber]
+    );
+
+    res.render('admin/bin-items', { binNumber, items });
   })
 );
 
 router.post(
   '/bins/:id/retire',
   asyncHandler(async (req, res) => {
+    // Marking a bin "Empty" while it still holds real items wouldn't break anything
+    // functionally (fulfillment only ever looks at item/order status, never bin status —
+    // a sold item still shows its bin number in the queue regardless), but it would leave
+    // the bin list itself lying about what's actually in there. Blocked here rather than
+    // just documented, since nothing else would ever catch the mistake.
+    const { rows } = await pool.query(
+      `SELECT b.bin_number, COUNT(i.id) FILTER (
+                WHERE i.status NOT IN ('picked_up', 'expired', 'removed')
+              ) AS occupied_count
+         FROM bins b
+         LEFT JOIN items i ON i.bin_number = b.bin_number
+        WHERE b.id = $1
+        GROUP BY b.id`,
+      [req.params.id]
+    );
+
+    if (rows.length === 0) {
+      return res.redirect('/admin/bins');
+    }
+
+    if (Number(rows[0].occupied_count) > 0) {
+      return res.redirect(
+        `/admin/bins?error=${encodeURIComponent(
+          `Bin #${rows[0].bin_number} still has ${rows[0].occupied_count} item(s) in it — move or remove them first.`
+        )}`
+      );
+    }
+
     // Retiring/consolidating a bin is a human decision made by tapping a button here —
     // software never moves a physical item or infers bin state changes (Section 2).
     await pool.query(`UPDATE bins SET status = 'retired' WHERE id = $1`, [req.params.id]);

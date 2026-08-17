@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bin #<%= binNumber %></title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/admin-header', { active: 'bins' }) %>
+
+  <main class="admin-page">
+    <a class="back-link" href="/admin/bins">&larr; Back to Bins</a>
+    <h1>Bin #<%= binNumber %></h1>
+
+    <% if (items.length === 0) { %>
+      <p class="empty-state">This bin is empty.</p>
+    <% } else { %>
+      <div class="bins-table-wrap">
+        <table class="bins-table">
+          <thead>
+            <tr>
+              <th></th>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% items.forEach((item) => { %>
+              <tr>
+                <td>
+                  <% if (item.photo_url) { %>
+                    <img src="<%= item.photo_url %>" alt="" class="bin-item-thumb">
+                  <% } else { %>
+                    <div class="bin-item-thumb bin-item-thumb-empty"></div>
+                  <% } %>
+                </td>
+                <td><%= item.title || '(untitled draft)' %></td>
+                <td><%= (item.category || '—').replace('_', ' ') %></td>
+                <td><%= item.status %></td>
+                <td><%= item.price_current_cents != null ? '$' + (item.price_current_cents / 100).toFixed(2) : '—' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </main>
+</body>
+</html>
