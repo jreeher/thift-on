@@ -1295,6 +1295,11 @@ body {
   border-color: var(--shop-accent);
 }
 
+.checkout-form-hint {
+  flex: 1 1 100%;
+  margin: -0.5rem 0 0;
+}
+
 .checkout-form .checkbox-label {
   flex-direction: row;
   align-items: center;

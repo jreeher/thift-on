@@ -43,26 +43,12 @@
         <span class="cart-subtotal">Subtotal: $<%= (subtotalCents / 100).toFixed(2) %></span>
       </div>
 
-      <% if (!phone) { %>
-        <form method="GET" action="/cart" class="bin-create-form">
-          <label>
-            Phone number
-            <input type="tel" name="phone" value="" placeholder="(555) 555-5555">
-          </label>
-          <button type="submit" class="secondary-btn">Check for store credit</button>
-        </form>
-        <p class="admin-hint">
-          Checking here tells you your store credit balance ahead of time — or just enter
-          your phone in the form below, it's needed either way for pickup confirmation.
-        </p>
-      <% } else { %>
-        <% if (creditLookupRateLimited) { %>
-          <p class="admin-hint">Too many attempts — please wait a moment and try again.</p>
-        <% } else if (!(donorBalanceCents > 0)) { %>
-          <p class="admin-hint">No store credit available for that number.</p>
-        <% } else { %>
-          <p class="success-banner">You have $<%= (donorBalanceCents / 100).toFixed(2) %> in store credit available.</p>
-        <% } %>
+      <% if (creditLookupRateLimited) { %>
+        <p class="admin-hint">Too many attempts — please wait a moment and try again.</p>
+      <% } else if (phone && !(donorBalanceCents > 0)) { %>
+        <p class="admin-hint">No store credit available for that number.</p>
+      <% } else if (donorBalanceCents > 0) { %>
+        <p class="success-banner">You have $<%= (donorBalanceCents / 100).toFixed(2) %> in store credit available.</p>
       <% } %>
 
       <% if (error) { %>
@@ -70,14 +56,16 @@
       <% } %>
 
       <form method="POST" action="/checkout" class="checkout-form">
-        <% if (phone) { %>
-          <input type="hidden" name="phone" value="<%= phone %>">
-        <% } else { %>
-          <label>
-            Phone number (for pickup confirmation)
-            <input type="tel" name="phone" required placeholder="(555) 555-5555">
-          </label>
-        <% } %>
+        <label>
+          Phone number
+          <input type="tel" name="phone" required value="<%= phone || '' %>" placeholder="(555) 555-5555">
+        </label>
+        <p class="admin-hint checkout-form-hint">
+          Enter phone number to check store credit or receive order updates.
+        </p>
+        <button type="submit" formmethod="GET" formaction="/cart" formnovalidate class="secondary-btn">
+          Check store credit
+        </button>
         <% if (donorBalanceCents > 0) { %>
           <label class="checkbox-label">
             <input type="checkbox" name="apply_credit" value="yes">
@@ -97,7 +85,7 @@
             <% }) %>
           </select>
         </label>
-        <p class="admin-hint">
+        <p class="admin-hint checkout-form-hint">
           Your card is authorized now but not charged until you pick up your order — you
           won't be charged for anything you decide not to take.
         </p>
