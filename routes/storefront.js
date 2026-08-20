@@ -163,7 +163,7 @@ router.get(
       subtotalCents,
       error: null,
       phone: phone || null,
-      firstName: null,
+      customerName: null,
       previousName,
       donorBalanceCents,
       creditLookupRateLimited,
@@ -241,7 +241,7 @@ router.post(
 router.post(
   '/checkout',
   asyncHandler(async (req, res) => {
-    const firstName = (req.body.first_name || '').trim();
+    const customerName = (req.body.name || '').trim();
     // The same phone doubles as the store-credit lookup key below and the order's own
     // contact phone — the customer only ever types it once, whether or not they end up
     // applying credit.
@@ -257,7 +257,7 @@ router.post(
         subtotalCents,
         error: message,
         phone: customerPhone || null,
-        firstName: firstName || null,
+        customerName: customerName || null,
         previousName: null,
         donorBalanceCents: null,
         // Otherwise the cart page's own "No store credit available" banner would render
@@ -268,8 +268,8 @@ router.post(
       });
     }
 
-    if (!firstName || customerPhone.length < 7 || !slot) {
-      return renderCartError('Enter your first name, a valid phone number, and a pickup time to check out.');
+    if (!customerName || customerPhone.length < 7 || !slot) {
+      return renderCartError('Enter your name, a valid phone number, and a pickup time to check out.');
     }
 
     // Re-derived from scratch, never trusted from the hidden form field — the same
@@ -337,7 +337,7 @@ router.post(
         await completeOrderFullyWithCredit(client, {
           orderId,
           orderNumber,
-          customerName: firstName,
+          customerName,
           customerPhone,
           subtotalCents,
           items,
@@ -374,7 +374,7 @@ router.post(
       [
         orderId,
         orderNumber,
-        firstName,
+        customerName,
         customerPhone,
         subtotalCents,
         session.id,
