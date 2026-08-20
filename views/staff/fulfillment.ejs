@@ -27,7 +27,7 @@
           <span class="order-customer">
             <%= order.customerName || order.customerEmail %><% if (order.customerPhone) { %> &middot; <%= order.customerPhone %><% } %>
             <% if (order.pickupDate) { %>
-              &middot; pickup <%= new Date(order.pickupDate).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' }) %>
+              &middot; pickup <%= new Date(order.pickupDate).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' }) %><% if (order.pickupTimeLabel) { %> <%= order.pickupTimeLabel %><% } %>
             <% } %>
           </span>
         </div>

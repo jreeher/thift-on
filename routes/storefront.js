@@ -4,6 +4,13 @@ const { ALLOWED_CATEGORIES } = require('../lib/pricing');
 const { ensureCartToken } = require('../middleware/cart');
 const { createCheckoutSession } = require('../lib/stripe');
 const { getBalanceCents, completeOrderFullyWithCredit } = require('../lib/store-credit');
+const {
+  isSlotOpen,
+  getAvailablePickupSlots,
+  formatSlotTime,
+  pickupDateBounds,
+  pickupDateRange
+} = require('../lib/pickup-schedule');
 
 const router = express.Router();
 
@@ -42,23 +49,12 @@ async function loadCartItems(cartToken) {
   return { items, subtotalCents };
 }
 
-// Checkout authorizes the card but doesn't capture until pickup is confirmed (Section:
-// manual capture). Card issuers release an uncaptured authorization after about 7 days,
-// so the pickup day a customer can choose is capped a little under that — picking a day
-// past the hold's expiry would guarantee the eventual capture fails.
-const MAX_PICKUP_DAYS_AHEAD = 6;
-
-function pickupDateBounds() {
-  const toISODate = (date) => date.toISOString().slice(0, 10);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const max = new Date(today);
-  max.setDate(max.getDate() + MAX_PICKUP_DAYS_AHEAD);
-  return { min: toISODate(today), max: toISODate(max) };
-}
-
-function isValidPickupDate(value, bounds) {
-  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && value >= bounds.min && value <= bounds.max;
+// pickup_slot from the form is "YYYY-MM-DDTHH:MM" (date + slot start time combined into
+// one dropdown value) — split apart here, validated together below.
+function parsePickupSlot(value) {
+  if (typeof value !== 'string') return null;
+  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})$/.exec(value);
+  return match ? { date: match[1], time: match[2] } : null;
 }
 
 router.use(ensureCartToken);
@@ -125,33 +121,38 @@ router.get(
   '/cart',
   asyncHandler(async (req, res) => {
     const { items, subtotalCents } = await loadCartItems(req.cartToken);
+    const bounds = pickupDateBounds();
 
     // A pure read — checking a balance never touches the ledger. The actual debit only
-    // ever happens at payment confirmation (see the /checkout route and the webhook).
-    // String(...) guards against a repeated ?donor_phone=&donor_phone= query param, which
-    // Express parses as an array — .replace would otherwise throw on that shape.
-    const donorPhone = String(req.query.donor_phone || '').replace(/\D/g, '');
+    // ever happens at payment confirmation (see the /checkout route and the webhook). The
+    // same phone number doubles as the order's own contact phone at checkout below, so a
+    // customer who checks their credit here never has to type it again.
+    // String(...) guards against a repeated ?phone=&phone= query param, which Express
+    // parses as an array — .replace would otherwise throw on that shape.
+    const phone = String(req.query.phone || '').replace(/\D/g, '');
     let donorBalanceCents = null;
     let creditLookupRateLimited = false;
-    if (donorPhone) {
+    if (phone) {
       if (isCreditLookupRateLimited(req.ip)) {
         creditLookupRateLimited = true;
       } else {
-        const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [donorPhone]);
+        const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [phone]);
         if (donorRows.length > 0) {
           donorBalanceCents = await getBalanceCents(pool, donorRows[0].id);
         }
       }
     }
 
+    const availablePickupSlots = await getAvailablePickupSlots(pool, pickupDateRange(bounds));
+
     res.render('storefront/cart', {
       items,
       subtotalCents,
       error: null,
-      donorPhone: donorPhone || null,
+      phone: phone || null,
       donorBalanceCents,
       creditLookupRateLimited,
-      pickupDateBounds: pickupDateBounds()
+      availablePickupSlots
     });
   })
 );
@@ -226,21 +227,39 @@ router.post(
   '/checkout',
   asyncHandler(async (req, res) => {
     const firstName = (req.body.first_name || '').trim();
+    // The same phone doubles as the store-credit lookup key below and the order's own
+    // contact phone — the customer only ever types it once, whether or not they end up
+    // applying credit.
     const customerPhone = String(req.body.phone || '').replace(/\D/g, '');
     const bounds = pickupDateBounds();
-    const pickupDate = req.body.pickup_date || '';
+    const slot = parsePickupSlot(req.body.pickup_slot);
 
-    if (!firstName || customerPhone.length < 7 || !isValidPickupDate(pickupDate, bounds)) {
+    async function renderCartError(message, { rateLimited = false } = {}) {
       const { items, subtotalCents } = await loadCartItems(req.cartToken);
+      const availablePickupSlots = await getAvailablePickupSlots(pool, pickupDateRange(bounds));
       return res.render('storefront/cart', {
         items,
         subtotalCents,
-        error: 'Enter your first name, a valid phone number, and a pickup day to check out.',
-        donorPhone: null,
+        error: message,
+        phone: customerPhone || null,
         donorBalanceCents: null,
-        creditLookupRateLimited: false,
-        pickupDateBounds: bounds
+        // Otherwise the cart page's own "No store credit available" banner would render
+        // alongside this error, misleadingly implying the customer has no credit at all
+        // rather than that the check was simply blocked by the rate limit.
+        creditLookupRateLimited: rateLimited,
+        availablePickupSlots
       });
+    }
+
+    if (!firstName || customerPhone.length < 7 || !slot) {
+      return renderCartError('Enter your first name, a valid phone number, and a pickup time to check out.');
+    }
+
+    // Re-derived from scratch, never trusted from the hidden form field — the same
+    // principle as price_current_cents never coming from the browser (Section 9).
+    const slotStillOpen = await isSlotOpen(pool, slot.date, slot.time);
+    if (!slotStillOpen) {
+      return renderCartError('That pickup time is no longer available — please choose another.');
     }
 
     const { items, subtotalCents } = await loadCartItems(req.cartToken);
@@ -257,38 +276,34 @@ router.post(
       [req.cartToken]
     );
 
-    // Store credit, if the shopper checked a balance and chose to apply some. Re-derived
-    // from scratch here — nothing from the form is trusted past this point, the same way
-    // price_current_cents (not a client-supplied price) is what Stripe actually charges.
-    // Gated by the same rate limiter as the read-only balance check on /cart — this path
-    // doesn't just leak a balance, it can actually spend it, so it needs at least the same
-    // protection against being scripted to guess phone numbers.
+    // Store credit, only if the customer explicitly opted in via the checkbox shown after
+    // checking their balance on the cart page — always the full amount available, up to
+    // the subtotal, since the ask is yes/no, not "how much." Re-derived from scratch here
+    // — nothing from the form is trusted past this point. Gated by the same rate limiter
+    // as the read-only balance check on /cart — this path doesn't just leak a balance, it
+    // can actually spend it, so it needs at least the same protection against being
+    // scripted to guess phone numbers.
     let donorId = null;
     let creditCentsToApply = 0;
-    const donorPhone = String(req.body.donor_phone || '').replace(/\D/g, '');
-    const requestedCreditCents = req.body.credit_dollars ? Math.round(Number(req.body.credit_dollars) * 100) : 0;
+    const wantsCredit = req.body.apply_credit === 'yes';
 
-    if (donorPhone && requestedCreditCents > 0) {
+    if (wantsCredit) {
       if (isCreditLookupRateLimited(req.ip)) {
         // The customer explicitly asked to apply credit they already saw confirmed on the
         // cart page — silently charging full price instead would be a surprise. Surface it
         // the same way the cart page itself does, rather than falling through unannounced.
-        return res.render('storefront/cart', {
-          items,
-          subtotalCents,
-          error: 'Too many attempts — please wait a moment and try checkout again.',
-          donorPhone,
-          donorBalanceCents: null,
-          creditLookupRateLimited: false,
-          pickupDateBounds: bounds
+        return renderCartError('Too many attempts — please wait a moment and try checkout again.', {
+          rateLimited: true
         });
       }
 
-      const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [donorPhone]);
+      const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [
+        customerPhone
+      ]);
       if (donorRows.length > 0) {
         donorId = donorRows[0].id;
         const balanceCents = await getBalanceCents(pool, donorId);
-        creditCentsToApply = Math.min(requestedCreditCents, balanceCents, subtotalCents);
+        creditCentsToApply = Math.min(balanceCents, subtotalCents);
       }
     }
 
@@ -311,7 +326,8 @@ router.post(
           items,
           donorId,
           creditCents: creditCentsToApply,
-          pickupDate
+          pickupDate: slot.date,
+          pickupTime: slot.time
         });
         await client.query('COMMIT');
       } catch (err) {
@@ -336,9 +352,20 @@ router.post(
     });
 
     await pool.query(
-      `INSERT INTO orders (id, order_number, customer_name, customer_phone, subtotal_cents, stripe_session_id, status, credit_donor_id, credit_applied_cents, pickup_date)
-       VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8, $9)`,
-      [orderId, orderNumber, firstName, customerPhone, subtotalCents, session.id, donorId, creditCentsToApply, pickupDate]
+      `INSERT INTO orders (id, order_number, customer_name, customer_phone, subtotal_cents, stripe_session_id, status, credit_donor_id, credit_applied_cents, pickup_date, pickup_time)
+       VALUES ($1, $2, $3, $4, $5, $6, 'pending', $7, $8, $9, $10)`,
+      [
+        orderId,
+        orderNumber,
+        firstName,
+        customerPhone,
+        subtotalCents,
+        session.id,
+        donorId,
+        creditCentsToApply,
+        slot.date,
+        slot.time
+      ]
     );
 
     res.redirect(303, session.url);
@@ -363,7 +390,12 @@ router.get(
     // (Section 2). The view is written to be honest about that.
     const { rows: items } = await pool.query('SELECT * FROM items WHERE order_id = $1', [orderId]);
 
-    res.render('storefront/order-success', { order: orderRows[0], items });
+    const order = orderRows[0];
+    res.render('storefront/order-success', {
+      order,
+      items,
+      pickupTimeLabel: order.pickup_time ? formatSlotTime(order.pickup_time) : null
+    });
   })
 );
 

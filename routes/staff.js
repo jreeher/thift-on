@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireStaffAuth } = require('../middleware/auth');
 const { getFulfillmentQueue, markItemPulled, declineItem, markOrderPickedUp } = require('../lib/fulfillment');
+const { formatSlotTime } = require('../lib/pickup-schedule');
 
 const router = express.Router();
 
@@ -15,7 +16,11 @@ router.get(
   '/fulfillment',
   asyncHandler(async (req, res) => {
     const orders = await getFulfillmentQueue();
-    res.render('staff/fulfillment', { orders, error: req.query.error || null });
+    const ordersWithPickupLabel = orders.map((order) => ({
+      ...order,
+      pickupTimeLabel: order.pickupTime ? formatSlotTime(order.pickupTime) : null
+    }));
+    res.render('staff/fulfillment', { orders: ordersWithPickupLabel, error: req.query.error || null });
   })
 );
 

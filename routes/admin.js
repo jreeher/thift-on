@@ -19,6 +19,7 @@ const {
 } = require('../lib/reports');
 const { getRecentDonors, findDonorByPhone, getDonorHistory } = require('../lib/donors');
 const { ITEM_STATUS_LABELS } = require('../lib/item-status');
+const { pickupDateBounds, pickupDateRange, getSlotsForDate, setSlotOpen } = require('../lib/pickup-schedule');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
@@ -682,6 +683,58 @@ router.get(
       categories: ALLOWED_CATEGORIES,
       resultLimit: REPORT_RESULT_LIMIT
     });
+  })
+);
+
+// Covers the same window customers can actually book into (Section: MAX_PICKUP_DAYS_AHEAD
+// in lib/pickup-schedule.js) — no point managing slots further out than anyone could pick.
+router.get(
+  '/schedule',
+  asyncHandler(async (req, res) => {
+    const bounds = pickupDateBounds();
+    const dateStrings = pickupDateRange(bounds);
+
+    const days = [];
+    for (const dateStr of dateStrings) {
+      const slots = await getSlotsForDate(pool, dateStr);
+      days.push({
+        date: dateStr,
+        label: new Date(`${dateStr}T00:00:00Z`).toLocaleDateString('en-US', {
+          timeZone: 'UTC',
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric'
+        }),
+        slots
+      });
+    }
+
+    res.render('admin/schedule', { days });
+  })
+);
+
+router.post(
+  '/schedule/:date/:startTime/toggle',
+  asyncHandler(async (req, res) => {
+    const { date, startTime } = req.params;
+    const slots = await getSlotsForDate(pool, date);
+    const slot = slots.find((s) => s.startTime === startTime);
+    // A slot that isn't found (e.g. a stale page) has no current override — treat "toggle"
+    // as opening it, the same effective result as if it had defaulted open all along.
+    await setSlotOpen(pool, date, startTime, slot ? !slot.isOpen : true);
+    res.redirect('/admin/schedule');
+  })
+);
+
+router.post(
+  '/schedule/:date/add',
+  asyncHandler(async (req, res) => {
+    const { date } = req.params;
+    const startTime = req.body.start_time;
+    if (startTime) {
+      await setSlotOpen(pool, date, startTime, true);
+    }
+    res.redirect('/admin/schedule');
   })
 );
 

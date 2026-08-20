@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedule</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <%- include('../partials/admin-header', { active: 'schedule' }) %>
+
+  <main class="admin-page">
+    <h1>Schedule</h1>
+    <p class="admin-hint">
+      Pickup slots default to 1-hour blocks, 4–8pm every day. Close a slot to stop it from
+      being booked, or add an extra one outside the usual hours for a given day.
+    </p>
+
+    <% days.forEach((day) => { %>
+      <section class="schedule-day">
+        <h2><%= day.label %></h2>
+        <div class="schedule-slots">
+          <% day.slots.forEach((slot) => { %>
+            <form method="POST" action="/admin/schedule/<%= day.date %>/<%= slot.startTime %>/toggle" class="schedule-slot <%= slot.isOpen ? 'schedule-slot-open' : 'schedule-slot-closed' %>">
+              <button type="submit"><%= slot.label %> &mdash; <%= slot.isOpen ? 'Open' : 'Closed' %></button>
+            </form>
+          <% }) %>
+        </div>
+        <form method="POST" action="/admin/schedule/<%= day.date %>/add" class="schedule-add-form">
+          <label>
+            Add a slot at
+            <input type="time" name="start_time" required>
+          </label>
+          <button type="submit" class="secondary-btn">Add</button>
+        </form>
+      </section>
+    <% }) %>
+  </main>
+</body>
+</html>

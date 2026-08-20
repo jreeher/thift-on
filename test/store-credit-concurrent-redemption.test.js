@@ -67,7 +67,9 @@ async function attemptCompletion(ctx, orderId) {
       subtotalCents: 1000,
       items: [{ id: ctx.itemId }],
       donorId: ctx.donorId,
-      creditCents: 1000
+      creditCents: 1000,
+      pickupDate: '2026-01-01',
+      pickupTime: '16:00'
     });
     await client.query('COMMIT');
     return { succeeded: true };

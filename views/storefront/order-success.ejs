@@ -19,7 +19,7 @@
       </p>
     <% } else if (order.status === 'paid' || order.status === 'ready_for_pickup') { %>
       <p>
-        Your order is confirmed<% if (order.pickup_date) { %> for pickup on <%= new Date(order.pickup_date).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric' }) %><% } %>.
+        Your order is confirmed<% if (order.pickup_date) { %> for pickup on <%= new Date(order.pickup_date).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric' }) %><% if (pickupTimeLabel) { %> between <%= pickupTimeLabel %><% } %><% } %>.
         Your card is authorized but won't be charged until you pick everything up &mdash;
         you won't pay for anything you decide not to take.
       </p>

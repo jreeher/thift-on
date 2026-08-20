@@ -567,6 +567,89 @@ body {
   color: var(--shop-accent);
 }
 
+.schedule-day {
+  background: var(--shop-surface);
+  border: 1px solid var(--shop-border);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.schedule-day h2 {
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  color: var(--shop-ink);
+}
+
+.schedule-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.schedule-slot button {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.schedule-slot-open button {
+  background: var(--shop-accent-soft);
+  border: 1px solid #ecc9b8;
+  color: var(--shop-accent-dark);
+}
+
+.schedule-slot-open button:hover {
+  background: var(--shop-accent);
+  color: #fff;
+  border-color: var(--shop-accent);
+}
+
+.schedule-slot-closed button {
+  background: var(--shop-bg);
+  border: 1px solid var(--shop-border);
+  color: var(--shop-muted);
+  text-decoration: line-through;
+}
+
+.schedule-slot-closed button:hover {
+  border-color: var(--shop-muted);
+  color: var(--shop-ink);
+  text-decoration: none;
+}
+
+.schedule-add-form {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--shop-border);
+}
+
+.schedule-add-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  font-weight: 600;
+  gap: 0.35rem;
+  color: var(--shop-ink);
+}
+
+.schedule-add-form input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--shop-border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
 .bin-create-form {
   display: flex;
   gap: 1rem;
@@ -1195,18 +1278,36 @@ body {
   color: var(--shop-ink);
 }
 
-.checkout-form input {
+.checkout-form input,
+.checkout-form select {
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--shop-border);
   border-radius: 10px;
   font-weight: normal;
+  font-family: inherit;
   font-size: 1rem;
   transition: border-color 0.15s ease;
 }
 
-.checkout-form input:focus {
+.checkout-form input:focus,
+.checkout-form select:focus {
   outline: none;
   border-color: var(--shop-accent);
+}
+
+.checkout-form .checkbox-label {
+  flex-direction: row;
+  align-items: center;
+  flex: 1 1 100%;
+  gap: 0.6rem;
+}
+
+.checkout-form .checkbox-label input {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+  padding: 0;
+  accent-color: var(--shop-accent);
 }
 
 .checkout-btn {
