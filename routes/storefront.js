@@ -132,6 +132,7 @@ router.get(
     const phone = String(req.query.phone || '').replace(/\D/g, '');
     let donorBalanceCents = null;
     let creditLookupRateLimited = false;
+    let previousName = null;
     if (phone) {
       if (isCreditLookupRateLimited(req.ip)) {
         creditLookupRateLimited = true;
@@ -139,6 +140,18 @@ router.get(
         const { rows: donorRows } = await pool.query('SELECT id FROM donors WHERE phone_number = $1', [phone]);
         if (donorRows.length > 0) {
           donorBalanceCents = await getBalanceCents(pool, donorRows[0].id);
+        }
+
+        // Best-effort convenience, not an account system — just reuses whatever name was
+        // typed on this phone's most recent order so a repeat customer doesn't retype it.
+        const { rows: nameRows } = await pool.query(
+          `SELECT customer_name FROM orders
+             WHERE customer_phone = $1 AND customer_name IS NOT NULL AND customer_name <> ''
+             ORDER BY created_at DESC LIMIT 1`,
+          [phone]
+        );
+        if (nameRows.length > 0) {
+          previousName = nameRows[0].customer_name;
         }
       }
     }
@@ -150,6 +163,8 @@ router.get(
       subtotalCents,
       error: null,
       phone: phone || null,
+      firstName: null,
+      previousName,
       donorBalanceCents,
       creditLookupRateLimited,
       availablePickupSlots
@@ -242,6 +257,8 @@ router.post(
         subtotalCents,
         error: message,
         phone: customerPhone || null,
+        firstName: firstName || null,
+        previousName: null,
         donorBalanceCents: null,
         // Otherwise the cart page's own "No store credit available" banner would render
         // alongside this error, misleadingly implying the customer has no credit at all
